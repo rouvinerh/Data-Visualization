@@ -87,8 +87,7 @@ def create_interactive_plot_with_subplots():
     fig = make_subplots(
         rows = 4, cols = 1,
         subplot_titles = ("Sector 1 Time", "Sector 2 Time", "Sector 3 Time", "Lap Time"),
-        shared_xaxes = True,
-        vertical_spacing = 0.1 
+            vertical_spacing = 0.1 
     )
 
     drivers = sector_times_df['Driver'].unique()
