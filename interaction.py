@@ -83,21 +83,18 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
                                          var_name = 'Sector', value_name = 'Time')
 
 def create_interactive_plot_with_subplots():
-    # Create a subplot figure with 4 rows (3 sectors + 1 lap time plot)
     fig = make_subplots(
-        rows = 4, cols = 1,
-        subplot_titles = ("Sector 1 Time", "Sector 2 Time", "Sector 3 Time", "Lap Time"),
-            vertical_spacing = 0.1 
+        rows = 2, cols = 1,
+        subplot_titles = ("Sector Times", "Lap Time"),
+        vertical_spacing = 0.15
     )
 
     drivers = sector_times_df['Driver'].unique()
 
-    # Plot data for each driver (initially, only the first driver will be visible)
     for i, driver in enumerate(drivers):
         driver_data = sector_times_long[sector_times_long['Driver'] == driver]
         
-        # Plot for each sector (Sector 1, Sector 2, Sector 3)
-        for row, sector in enumerate(['Sector1Time', 'Sector2Time', 'Sector3Time'], start = 1):
+        for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
             sector_data = driver_data[driver_data['Sector'] == sector]
             fig.add_trace(
                 go.Scatter(
@@ -106,12 +103,11 @@ def create_interactive_plot_with_subplots():
                     mode = 'lines+markers',
                     name = f"{driver} - {sector}",
                     visible = (i == 0),
-                    line = dict(shape='linear'),
+                    line = dict(shape = 'linear', color = color),
                 ),
-                row = row, col = 1
+                row = 1, col = 1
             )
 
-        # Plot for lap times (row 4)
         lap_time_data = sector_times_df[sector_times_df['Driver'] == driver]
         fig.add_trace(
             go.Scatter(
@@ -119,19 +115,17 @@ def create_interactive_plot_with_subplots():
                 y = lap_time_data['LapTime'],
                 mode = 'lines+markers',
                 name = f"{driver} - Lap Time",
-                visible = (i == 0), 
+                visible = (i == 0),
                 line = dict(shape = 'linear', color = 'firebrick'),
             ),
-            row = 4, col = 1
+            row = 2, col = 1
         )
 
-    # Create dropdown buttons for selecting different drivers
     dropdown_buttons = []
     for i, driver in enumerate(drivers):
         visibility = [False] * len(fig.data)
-        visibility[i * 4:i * 4 + 4] = [True, True, True, True]  
+        visibility[i * 4:i * 4 + 4] = [True, True, True, True]
 
-        # Add a button to switch to this driver's data
         dropdown_buttons.append(
             dict(
                 label = driver,
@@ -141,7 +135,6 @@ def create_interactive_plot_with_subplots():
             )
         )
 
-    # Add the dropdown menu to the figure layout
     fig.update_layout(
         updatemenus = [
             dict(
@@ -156,17 +149,13 @@ def create_interactive_plot_with_subplots():
         ],
         title = f"Sector Times and Lap Time for {drivers[0]}",
         hovermode = "x unified",
-        height = 1000
+        height = 800
     )
 
-    # Update x-axis title
-    fig.update_xaxes(title_text = "Lap Number", row = 4, col = 1)
+    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time']].max().max() * 1.1], row = 1, col = 1)
+    fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
     
-    # Update y-axis and range
-    fig.update_yaxes(title_text = "Time (s)", range = [0, sector_times_df['Sector1Time'].max() * 1.1], row =1, col = 1)
-    fig.update_yaxes(title_text = "Time (s)", range = [0, sector_times_df['Sector2Time'].max() * 1.1], row = 2, col = 1)
-    fig.update_yaxes(title_text = "Time (s)", range = [0, sector_times_df['Sector3Time'].max() * 1.1], row = 3, col = 1)
-    fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 4, col = 1)
     fig.show()
 
 create_interactive_plot_with_subplots()
