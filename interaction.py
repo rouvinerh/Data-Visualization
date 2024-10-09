@@ -15,7 +15,7 @@ race.load()
 laps = race.laps
 
 # Define parameters that are interesting
-sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime']].copy()
+sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
 condition = sector_times_df['LapNumber'] == 1
@@ -59,13 +59,15 @@ sector_times_df = sector_times_df.fillna(0)
 
 # Find rows with missing data (NaN values)
 nat_rows = sector_times_df[
-    sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime']].isna().any(axis = 1)
+    sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].isna().any(axis = 1)
 ]
 
-# Count the number of times each driver appears (i.e., number of laps per driver)
-driver_lap_counts = sector_times_df['Driver'].value_counts()
-print(nat_rows[['Driver','LapNumber','Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime']])
-print(driver_lap_counts)
+## Check stuff via print
+# driver_lap_counts = sector_times_df['Driver'].value_counts()
+# compound_counts = sector_times_df['Compound']
+# print(nat_rows[['Driver','LapNumber','Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']])
+# print(driver_lap_counts)
+# print(compound_counts)
 
 sector_times_df['Sector1Time'] = pd.to_timedelta(sector_times_df['Sector1Time'])
 sector_times_df['Sector2Time'] = pd.to_timedelta(sector_times_df['Sector2Time'])
@@ -103,12 +105,14 @@ def create_interactive_plot_with_subplots():
                     mode = 'lines+markers',
                     name = f"{driver} - {sector}",
                     visible = (i == 0),
-                    line = dict(shape = 'linear', color = color),
+                    line = dict(shape = 'linear', color = color)
                 ),
                 row = 1, col = 1
             )
 
         lap_time_data = sector_times_df[sector_times_df['Driver'] == driver]
+        lap_compound_info = lap_time_data['Compound']  # Compound info for lap times
+        
         fig.add_trace(
             go.Scatter(
                 x = lap_time_data['LapNumber'],
@@ -117,6 +121,8 @@ def create_interactive_plot_with_subplots():
                 name = f"{driver} - Lap Time",
                 visible = (i == 0),
                 line = dict(shape = 'linear', color = 'firebrick'),
+                text = lap_compound_info,  # Add compound info for hover text
+                hovertemplate = 'Lap: %{x}<br>Lap Time: %{y}<br>Compound: %{text}',  # Display compound in hover
             ),
             row = 2, col = 1
         )
@@ -157,5 +163,6 @@ def create_interactive_plot_with_subplots():
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
     
     fig.show()
+
 
 create_interactive_plot_with_subplots()
