@@ -103,26 +103,27 @@ def create_interactive_plot_with_subplots():
                     x = sector_data['LapNumber'],
                     y = sector_data['Time'],
                     mode = 'lines+markers',
-                    name = f"{driver} - {sector}",
-                    visible = (i == 0),
-                    line = dict(shape = 'linear', color = color)
+                    name = f"{sector}",
+                    visible = (i == 0), # show first driver
+                    line = dict(shape = 'linear', color = color),
+                    hovertemplate = '%{y}s'
                 ),
                 row = 1, col = 1
             )
 
         lap_time_data = sector_times_df[sector_times_df['Driver'] == driver]
-        lap_compound_info = lap_time_data['Compound']  # Compound info for lap times
+        lap_compound_info = lap_time_data['Compound'] 
         
         fig.add_trace(
             go.Scatter(
                 x = lap_time_data['LapNumber'],
                 y = lap_time_data['LapTime'],
                 mode = 'lines+markers',
-                name = f"{driver} - Lap Time",
+                name = f"Lap Time",
                 visible = (i == 0),
                 line = dict(shape = 'linear', color = 'firebrick'),
-                text = lap_compound_info,  # Add compound info for hover text
-                hovertemplate = 'Lap: %{x}<br>Lap Time: %{y}<br>Compound: %{text}',  # Display compound in hover
+                text = lap_compound_info,  
+                hovertemplate = '<extra></extra>Lap: %{x}<br>Lap Time: %{y}s<br>Compound: %{text}'
             ),
             row = 2, col = 1
         )
@@ -149,13 +150,20 @@ def create_interactive_plot_with_subplots():
                 direction = "down", 
                 x = 1.15, 
                 xanchor = "left",
-                y = 1.15,
+                y = 1.10,
                 yanchor = "top",
             ),
         ],
         title = f"Sector Times and Lap Time for {drivers[0]}",
         hovermode = "x unified",
-        height = 800
+        height = 800,
+        legend = dict(
+            x = 0,
+            y = 1,
+            bgcolor = "White",
+            bordercolor = "Black",
+            borderwidth = 2
+        )
     )
 
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
@@ -163,6 +171,5 @@ def create_interactive_plot_with_subplots():
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
     
     fig.show()
-
 
 create_interactive_plot_with_subplots()
