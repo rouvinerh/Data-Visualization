@@ -1,5 +1,6 @@
 import fastf1 as ff1
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -63,10 +64,10 @@ nat_rows = sector_times_df[
 ]
 
 ## Check stuff via print
-# driver_lap_counts = sector_times_df['Driver'].value_counts()
+driver_lap_counts = sector_times_df['Driver'].value_counts()
 # compound_counts = sector_times_df['Compound']
 # print(nat_rows[['Driver','LapNumber','Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']])
-# print(driver_lap_counts)
+print(driver_lap_counts)
 # print(compound_counts)
 
 sector_times_df['Sector1Time'] = pd.to_timedelta(sector_times_df['Sector1Time'])
@@ -86,12 +87,20 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
 
 def create_interactive_plot_with_subplots():
     fig = make_subplots(
-        rows = 2, cols = 1,
-        subplot_titles = ("Sector Times", "Lap Time"),
+        rows = 3, cols = 1,
+        subplot_titles = ("Sector Times", "Lap Time", "Scatterplot"),
         vertical_spacing = 0.15
     )
 
     drivers = sector_times_df['Driver'].unique()
+
+    compound_to_marker = {
+        'soft': 'circle',
+        'medium': 'square',
+        'hard': 'triangle-up',
+        'intermediate': 'diamond',
+        'wet': 'x'
+    }
 
     for i, driver in enumerate(drivers):
         driver_data = sector_times_long[sector_times_long['Driver'] == driver]
@@ -172,4 +181,56 @@ def create_interactive_plot_with_subplots():
     
     fig.show()
 
-create_interactive_plot_with_subplots()
+def create_scatterplot_with_compounds():
+    drivers_of_interest = ['VER', 'HAM']
+    filtered_df = sector_times_df[sector_times_df['Driver'].isin(drivers_of_interest)]
+
+    compound_to_marker = {
+        'SOFT': 'circle',
+        'MEDIUM': 'square',
+        'HARD': 'triangle-up',
+        'INTERMEDIATE': 'diamond',
+        'WET': 'x',
+    }
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x = filtered_df[filtered_df['Driver'] == 'VER']['LapNumber'],
+        y = filtered_df[filtered_df['Driver'] == 'VER']['LapTime'],
+        mode = 'markers',
+        name = 'Verstappen',
+        marker = dict(
+            size = 8,
+            color = 'blue',
+            symbol = filtered_df[filtered_df['Driver'] == 'VER']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
+        ),
+        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
+        text = filtered_df[filtered_df['Driver'] == 'VER']['Compound']
+    ))
+
+    fig.add_trace(go.Scatter(
+        x = filtered_df[filtered_df['Driver'] == 'HAM']['LapNumber'],
+        y = filtered_df[filtered_df['Driver'] == 'HAM']['LapTime'],
+        mode = 'markers',
+        name = 'Hamilton',
+        marker = dict(
+            size = 8,
+            color = 'red',
+            symbol = filtered_df[filtered_df['Driver'] == 'VER']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
+        ),
+        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
+        text = filtered_df[filtered_df['Driver'] == 'HAM']['Compound']
+    ))
+
+    fig.update_layout(
+        title = 'Lap Time vs Lap Number for VER and HAM with Tire Compounds',
+        xaxis_title = 'Lap Number',
+        yaxis_title = 'Lap Time (seconds)',
+        hovermode = 'closest'
+    )
+
+    fig.show()
+
+# create_interactive_plot_with_subplots()
+create_scatterplot_with_compounds()
