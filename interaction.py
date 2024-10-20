@@ -198,7 +198,7 @@ def create_scatterplot_with_compounds():
     fig.add_trace(go.Scatter(
         x = filtered_df[filtered_df['Driver'] == 'VER']['LapNumber'],
         y = filtered_df[filtered_df['Driver'] == 'VER']['LapTime'],
-        mode = 'markers',
+        mode = 'lines+markers',
         name = 'Verstappen',
         marker = dict(
             size = 8,
@@ -212,7 +212,7 @@ def create_scatterplot_with_compounds():
     fig.add_trace(go.Scatter(
         x = filtered_df[filtered_df['Driver'] == 'HAM']['LapNumber'],
         y = filtered_df[filtered_df['Driver'] == 'HAM']['LapTime'],
-        mode = 'markers',
+        mode = 'lines+markers',
         name = 'Hamilton',
         marker = dict(
             size = 8,
@@ -232,5 +232,5 @@ def create_scatterplot_with_compounds():
 
     fig.show()
 
-# create_interactive_plot_with_subplots()
+create_interactive_plot_with_subplots()
 create_scatterplot_with_compounds()
