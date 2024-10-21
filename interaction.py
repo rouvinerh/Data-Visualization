@@ -87,8 +87,8 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
 
 def create_interactive_plot_with_subplots():
     fig = make_subplots(
-        rows = 3, cols = 1,
-        subplot_titles = ("Sector Times", "Lap Time", "Scatterplot"),
+        rows = 2, cols = 1,
+        subplot_titles = ("Sector Times", "Lap Time"),
         vertical_spacing = 0.15
     )
 
@@ -217,7 +217,7 @@ def create_scatterplot_with_compounds():
         marker = dict(
             size = 8,
             color = 'red',
-            symbol = filtered_df[filtered_df['Driver'] == 'VER']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
+            symbol = filtered_df[filtered_df['Driver'] == 'HAM']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
         ),
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
         text = filtered_df[filtered_df['Driver'] == 'HAM']['Compound']
