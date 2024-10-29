@@ -95,7 +95,7 @@ def create_combined_plot():
     drivers = sector_times_df['Driver'].unique()
 
     compound_to_color = {
-        'soft': 'yellow',
+        'soft': 'red',
         'medium': 'blue',
         'hard': 'orange',
         'intermediate': 'green',
