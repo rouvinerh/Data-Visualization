@@ -85,14 +85,22 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
                                          value_vars = ['Sector1Time', 'Sector2Time', 'Sector3Time'], 
                                          var_name = 'Sector', value_name = 'Time')
 
-def create_interactive_plot_with_subplots():
+def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 1,
-        subplot_titles = ("Sector Times", "Lap Time"),
-        vertical_spacing = 0.15
+        subplot_titles = ("Sector Times", "Lap Time with Tire Compounds"),
+        vertical_spacing = 0.1
     )
 
     drivers = sector_times_df['Driver'].unique()
+
+    compound_to_color = {
+        'soft': 'yellow',
+        'medium': 'blue',
+        'hard': 'orange',
+        'intermediate': 'green',
+        'wet': 'purple'
+    }
 
     compound_to_marker = {
         'soft': 'circle',
@@ -104,7 +112,7 @@ def create_interactive_plot_with_subplots():
 
     for i, driver in enumerate(drivers):
         driver_data = sector_times_long[sector_times_long['Driver'] == driver]
-        
+
         for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
             sector_data = driver_data[driver_data['Sector'] == sector]
             fig.add_trace(
@@ -112,8 +120,8 @@ def create_interactive_plot_with_subplots():
                     x = sector_data['LapNumber'],
                     y = sector_data['Time'],
                     mode = 'lines+markers',
-                    name = f"{sector}",
-                    visible = (i == 0), # show first driver
+                    name = f"{driver} {sector}",
+                    visible = (i == 0),
                     line = dict(shape = 'linear', color = color),
                     hovertemplate = '%{y}s'
                 ),
@@ -121,51 +129,51 @@ def create_interactive_plot_with_subplots():
             )
 
         lap_time_data = sector_times_df[sector_times_df['Driver'] == driver]
-        lap_compound_info = lap_time_data['Compound'] 
-        
-        fig.add_trace(
-            go.Scatter(
-                x = lap_time_data['LapNumber'],
-                y = lap_time_data['LapTime'],
-                mode = 'lines+markers',
-                name = f"Lap Time",
-                visible = (i == 0),
-                line = dict(shape = 'linear', color = 'firebrick'),
-                text = lap_compound_info,  
-                hovertemplate = '<extra></extra>Lap: %{x}<br>Lap Time: %{y}s<br>Compound: %{text}'
+
+        fig.add_trace(go.Scatter(
+            x = lap_time_data['LapNumber'],
+            y = lap_time_data['LapTime'],
+            mode = 'lines+markers',
+            name = driver,
+            visible = (i == 0),
+            marker = dict(
+                size = 8,
+                color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
+                symbol = lap_time_data['Compound'].map(lambda x: compound_to_marker.get(x.lower(), 'cross'))
             ),
-            row = 2, col = 1
-        )
+            hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
+            text = lap_time_data['Compound']
+        ), row = 2, col = 1)
 
     dropdown_buttons = []
+    traces_per_driver = 4
+
     for i, driver in enumerate(drivers):
         visibility = [False] * len(fig.data)
-        visibility[i * 4:i * 4 + 4] = [True, True, True, True]
+        visibility[i * traces_per_driver:(i + 1) * traces_per_driver] = [True] * traces_per_driver
 
         dropdown_buttons.append(
             dict(
                 label = driver,
                 method = "update",
-                args = [{"visible": visibility}, 
-                        {"title": f"Sector Times and Lap Time for {driver}"}], 
+                args = [{"visible": visibility},
+                        {"title": f"Sector Times and Lap Time for {driver}"}],
             )
         )
 
     fig.update_layout(
-        updatemenus = [
-            dict(
-                active = 0,
-                buttons = dropdown_buttons,
-                direction = "down", 
-                x = 1.15, 
-                xanchor = "left",
-                y = 1.10,
-                yanchor = "top",
-            ),
-        ],
+        updatemenus = [dict(
+            active = 0,
+            buttons = dropdown_buttons,
+            direction = "down",
+            x = 1.15,
+            xanchor = "left",
+            y = 1.10,
+            yanchor = "top",
+        )],
         title = f"Sector Times and Lap Time for {drivers[0]}",
         hovermode = "x unified",
-        height = 800,
+        height = 1000,
         legend = dict(
             x = 0,
             y = 1,
@@ -175,62 +183,10 @@ def create_interactive_plot_with_subplots():
         )
     )
 
-    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
     fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time']].max().max() * 1.1], row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
-    
-    fig.show()
-
-def create_scatterplot_with_compounds():
-    drivers_of_interest = ['VER', 'HAM']
-    filtered_df = sector_times_df[sector_times_df['Driver'].isin(drivers_of_interest)]
-
-    compound_to_marker = {
-        'SOFT': 'circle',
-        'MEDIUM': 'square',
-        'HARD': 'triangle-up',
-        'INTERMEDIATE': 'diamond',
-        'WET': 'x',
-    }
-
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(
-        x = filtered_df[filtered_df['Driver'] == 'VER']['LapNumber'],
-        y = filtered_df[filtered_df['Driver'] == 'VER']['LapTime'],
-        mode = 'lines+markers',
-        name = 'Verstappen',
-        marker = dict(
-            size = 8,
-            color = 'blue',
-            symbol = filtered_df[filtered_df['Driver'] == 'VER']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
-        ),
-        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
-        text = filtered_df[filtered_df['Driver'] == 'VER']['Compound']
-    ))
-
-    fig.add_trace(go.Scatter(
-        x = filtered_df[filtered_df['Driver'] == 'HAM']['LapNumber'],
-        y = filtered_df[filtered_df['Driver'] == 'HAM']['LapTime'],
-        mode = 'lines+markers',
-        name = 'Hamilton',
-        marker = dict(
-            size = 8,
-            color = 'red',
-            symbol = filtered_df[filtered_df['Driver'] == 'HAM']['Compound'].map(lambda x: compound_to_marker.get(x, 'cross')),
-        ),
-        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
-        text = filtered_df[filtered_df['Driver'] == 'HAM']['Compound']
-    ))
-
-    fig.update_layout(
-        title = 'Lap Time vs Lap Number for VER and HAM with Tire Compounds',
-        xaxis_title = 'Lap Number',
-        yaxis_title = 'Lap Time (seconds)',
-        hovermode = 'closest'
-    )
 
     fig.show()
 
-create_interactive_plot_with_subplots()
-create_scatterplot_with_compounds()
+create_combined_plot()
