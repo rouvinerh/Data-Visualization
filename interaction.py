@@ -19,8 +19,9 @@ weather_data = race.weather_data
 # Define parameters that are interesting
 sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
 
-weather_data['Rainfall'].fillna(False, inplace=True)
-rain_change_laps = weather_data[weather_data['Rainfall'].astype(bool).diff().fillna(False)].index.to_list()
+weather_data['Rainfall'].fillna(False, inplace=True)  
+rain_change_laps = weather_data[weather_data['Rainfall'].astype(bool).diff().ne(0)].index.to_list()
+print(rain_change_laps)
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
 condition = sector_times_df['LapNumber'] == 1
@@ -50,13 +51,11 @@ sector_times_df.loc[condition5, 'LapTime'] = sector_times_df.loc[condition5, 'Se
                                                  sector_times_df.loc[condition5, 'Sector1Time'] + \
                                                  sector_times_df.loc[condition5, 'Sector2Time']
 
-
 # Create dummy columns to indicate the fastest times for each sector and lap time
 sector_times_df['FastestSector1'] = (sector_times_df['Sector1Time'] == sector_times_df.groupby('Driver')['Sector1Time'].transform('min')).astype(int)
 sector_times_df['FastestSector2'] = (sector_times_df['Sector2Time'] == sector_times_df.groupby('Driver')['Sector2Time'].transform('min')).astype(int)
 sector_times_df['FastestSector3'] = (sector_times_df['Sector3Time'] == sector_times_df.groupby('Driver')['Sector3Time'].transform('min')).astype(int)
 sector_times_df['FastestLap'] = (sector_times_df['LapTime'] == sector_times_df.groupby('Driver')['LapTime'].transform('min')).astype(int)
-
 
 # Sort the data by Driver and LapNumber for better readability
 sector_times_df = sector_times_df.sort_values(by=['Driver', 'LapNumber']).reset_index(drop=True)
@@ -66,13 +65,6 @@ sector_times_df = sector_times_df.fillna(0)
 nat_rows = sector_times_df[
     sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].isna().any(axis = 1)
 ]
-
-## Check stuff via print
-driver_lap_counts = sector_times_df['Driver'].value_counts()
-# compound_counts = sector_times_df['Compound']
-# print(nat_rows[['Driver','LapNumber','Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']])
-print(driver_lap_counts)
-# print(compound_counts)
 
 sector_times_df['Sector1Time'] = pd.to_timedelta(sector_times_df['Sector1Time'])
 sector_times_df['Sector2Time'] = pd.to_timedelta(sector_times_df['Sector2Time'])
@@ -94,7 +86,6 @@ def create_combined_plot():
         rows = 2, cols = 1,
         subplot_titles = ("Sector Times", "Lap Time with Tire Compounds"),
         vertical_spacing = 0.1,
-        shared_xaxes = True
     )
 
     drivers = sector_times_df['Driver'].unique()
@@ -194,7 +185,6 @@ def create_combined_plot():
 
     fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=1, col=1)
     fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=2, col=1)
-
 
     fig.show()
 
