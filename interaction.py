@@ -10,13 +10,17 @@ YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 
-# Load session and data
+# Load session, race data and weather data
 race = ff1.get_session(YEAR, GRAND_PRIX, SESSION_TYPE)
-race.load()
+race.load(weather = True)
 laps = race.laps
+weather_data = race.weather_data
 
 # Define parameters that are interesting
 sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
+
+weather_data['Rainfall'].fillna(False, inplace=True)
+rain_change_laps = weather_data[weather_data['Rainfall'].astype(bool).diff().fillna(False)].index.to_list()
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
 condition = sector_times_df['LapNumber'] == 1
@@ -89,7 +93,8 @@ def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 1,
         subplot_titles = ("Sector Times", "Lap Time with Tire Compounds"),
-        vertical_spacing = 0.1
+        vertical_spacing = 0.1,
+        shared_xaxes = True
     )
 
     drivers = sector_times_df['Driver'].unique()
@@ -183,9 +188,13 @@ def create_combined_plot():
         )
     )
 
-    fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
-    fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time']].max().max() * 1.1], row = 1, col = 1)
+    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
+
+    fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=1, col=1)
+    fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=2, col=1)
+
 
     fig.show()
 
