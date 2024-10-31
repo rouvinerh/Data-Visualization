@@ -129,6 +129,7 @@ def create_combined_plot():
         fig.add_trace(go.Scatter(
             x = lap_time_data['LapNumber'],
             y = lap_time_data['LapTime'],
+            xaxis = "x2",
             mode = 'lines+markers',
             name = driver,
             visible = (i == 0),
@@ -182,10 +183,9 @@ def create_combined_plot():
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
-
-    fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=1, col=1)
-    fig.update_xaxes(range=[-1, sector_times_df['LapNumber'].max()], row=2, col=1)
-
+    fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 1)
+    fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 2, col = 1)
+    fig.update_layout(xaxis2 = {'anchor': 'y', 'overlaying': 'x1', 'side': 'top'})        
     fig.show()
 
 create_combined_plot()
