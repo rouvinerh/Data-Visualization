@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from plotly.graph_objs.layout import YAxis,XAxis,Margin
 
 # Load race constants
 YEAR = 2019
@@ -19,9 +20,11 @@ weather_data = race.weather_data
 # Define parameters that are interesting
 sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
 
-weather_data['Rainfall'].fillna(False, inplace=True)  
-rain_change_laps = weather_data[weather_data['Rainfall'].astype(bool).diff().ne(0)].index.to_list()
-print(rain_change_laps)
+change_indexes = []
+# Loop through the array checking for minutes where Rainfall changed, starting from the second element
+for i in range(1, len(weather_data['Rainfall'])):
+    if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
+        change_indexes.append(i)
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
 condition = sector_times_df['LapNumber'] == 1
@@ -84,7 +87,6 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
 def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 1,
-        subplot_titles = ("Sector Times", "Lap Time with Tire Compounds"),
         vertical_spacing = 0.1,
     )
 
@@ -129,14 +131,13 @@ def create_combined_plot():
         fig.add_trace(go.Scatter(
             x = lap_time_data['LapNumber'],
             y = lap_time_data['LapTime'],
-            xaxis = "x2",
             mode = 'lines+markers',
             name = driver,
             visible = (i == 0),
             marker = dict(
                 size = 8,
                 color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
-                symbol = lap_time_data['Compound'].map(lambda x: compound_to_marker.get(x.lower(), 'cross'))
+                symbol = lap_time_data['Compound'].map(lambda  x: compound_to_marker.get(x.lower(), 'cross'))
             ),
             hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
             text = lap_time_data['Compound']
@@ -177,15 +178,14 @@ def create_combined_plot():
             bgcolor = "White",
             bordercolor = "Black",
             borderwidth = 2
-        )
+        ),
     )
 
-    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_xaxes(title_text = "Sector Times", row = 2, col = 1)
     fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
     fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 1)
     fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 2, col = 1)
-    fig.update_layout(xaxis2 = {'anchor': 'y', 'overlaying': 'x1', 'side': 'top'})        
     fig.show()
 
 create_combined_plot()
