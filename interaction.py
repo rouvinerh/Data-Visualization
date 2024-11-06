@@ -173,9 +173,11 @@ def create_combined_plot():
         go.Scatter(
             x = approximate_laps,  
             y = [180] * len(approximate_laps), 
-            mode = 'markers',  
+            mode = 'text',  
+            text = ['🌧'] * len(approximate_laps),
+            textposition = 'middle center',
             name = 'Rainfall Change Points',
-            marker=dict(color='red', size=8),
+            showlegend = False
         ),
         row=2, col=1, secondary_y=True
     )
