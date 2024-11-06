@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plotly.graph_objs.layout import YAxis,XAxis,Margin
+import math
 
 # Load race constants
 YEAR = 2019
@@ -19,12 +19,6 @@ weather_data = race.weather_data
 
 # Define parameters that are interesting
 sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
-
-change_indexes = []
-# Loop through the array checking for minutes where Rainfall changed, starting from the second element
-for i in range(1, len(weather_data['Rainfall'])):
-    if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
-        change_indexes.append(i)
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
 condition = sector_times_df['LapNumber'] == 1
@@ -53,6 +47,34 @@ condition5 = (sector_times_df['LapNumber'] == 26.0) & (sector_times_df['Driver']
 sector_times_df.loc[condition5, 'LapTime'] = sector_times_df.loc[condition5, 'Sector3Time'] + \
                                                  sector_times_df.loc[condition5, 'Sector1Time'] + \
                                                  sector_times_df.loc[condition5, 'Sector2Time']
+
+# Calculate minutes race takes
+max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
+max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
+total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
+total_race_time_minutes = math.ceil(total_race_time_seconds / 60)
+max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
+
+# Track minutes where changes happen
+change_indexes = [0]
+for i in range(1, total_race_time_minutes):
+    if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
+        change_indexes.append(i)
+
+approximate_laps = []
+for minute in change_indexes:
+    target_time_seconds = minute * 60 
+    lap_data = max_laps_driver_laps[max_laps_driver_laps['CumulativeLapTime'] >= target_time_seconds].iloc[0]
+    lap_number = lap_data['LapNumber']
+    if lap_number > 1:
+        previous_lap_time = max_laps_driver_laps[max_laps_driver_laps['LapNumber'] == lap_number - 1]['CumulativeLapTime'].values[0]
+    else:
+        previous_lap_time = 0 
+    
+    lap_fraction = (target_time_seconds - previous_lap_time) / (lap_data['CumulativeLapTime'] - previous_lap_time)
+    exact_lap = lap_number - 1 + lap_fraction
+    
+    approximate_laps.append(round(exact_lap, 1))
 
 # Create dummy columns to indicate the fastest times for each sector and lap time
 sector_times_df['FastestSector1'] = (sector_times_df['Sector1Time'] == sector_times_df.groupby('Driver')['Sector1Time'].transform('min')).astype(int)
@@ -88,6 +110,7 @@ def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 1,
         vertical_spacing = 0.1,
+        specs = [[{'secondary_y': True}], [{'secondary_y': True}]]
     )
 
     drivers = sector_times_df['Driver'].unique()
@@ -146,6 +169,17 @@ def create_combined_plot():
     dropdown_buttons = []
     traces_per_driver = 4
 
+    fig.add_trace(
+        go.Scatter(
+            x = approximate_laps,  
+            y = [180] * len(approximate_laps), 
+            mode = 'markers',  
+            name = 'Rainfall Change Points',
+            marker=dict(color='red', size=8),
+        ),
+        row=2, col=1, secondary_y=True
+    )
+
     for i, driver in enumerate(drivers):
         visibility = [False] * len(fig.data)
         visibility[i * traces_per_driver:(i + 1) * traces_per_driver] = [True] * traces_per_driver
@@ -178,7 +212,7 @@ def create_combined_plot():
             bgcolor = "White",
             bordercolor = "Black",
             borderwidth = 2
-        ),
+        ), 
     )
 
     fig.update_xaxes(title_text = "Sector Times", row = 2, col = 1)
@@ -186,6 +220,7 @@ def create_combined_plot():
     fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
     fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 1)
     fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 2, col = 1)
+
     fig.show()
 
 create_combined_plot()
