@@ -13,13 +13,14 @@ import math
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
+DRIVER = 'HAM'
 
 # Load session, race data and weather data
 race = ff1.get_session(YEAR, GRAND_PRIX, SESSION_TYPE)
 race.load(weather = True)
 laps = race.laps
 weather_data = race.weather_data
-available_drivers = race.drivers
+# available_drivers = race.drivers
 
 # Load CSV Data
 track_data_url = "https://raw.githubusercontent.com/TUMFTM/racetrack-database/master/tracks/Hockenheim.csv"
@@ -29,80 +30,81 @@ df = pd.read_csv(track_data_url)
 raceline_url = 'https://github.com/TUMFTM/racetrack-database/raw/e59595d1f3573b30d1ded6a08984935b957688e0/racelines/Hockenheim.csv'
 raceline_data = pd.read_csv(raceline_url, comment='#', header=None)  # Load the raceline data
 
-for driver_code in available_drivers:
-    try:
-        # Get laps for the driver
-        driver_laps = race.laps.pick_driver(driver_code)
+# Set laps for drivers
+# for driver_code in available_drivers:
+try:
+    # Get laps for the driver
+    driver_laps = race.laps.pick_driver(DRIVER)
 
-        # Check if there are any laps available for this driver
-        if driver_laps.empty:
-            print(f"No laps available for driver {driver_code}")
-            continue
+    # Check if there are any laps available for this driver
+    if driver_laps.empty:
+        print(f"No laps available for driver {DRIVER}")
+        
 
-        # Extract telemetry for the fastest lap of this driver
-        selected_laps = driver_laps.pick_laps(1)
-        #selected_laps = driver_laps#.pick_fastest() **************************** ROUVIN HERE SELECT THE LAP(S) YOU WANT
-        # OR selected_laps = driver_laps.pick_laps(range(10,21))
-        # OR selected_laps = driver_laps.pick_laps(1)
+    # Extract telemetry for the fastest lap of this driver
+    selected_laps = driver_laps.pick_laps(1)
+    #selected_laps = driver_laps#.pick_fastest() **************************** ROUVIN HERE SELECT THE LAP(S) YOU WANT
+    # OR selected_laps = driver_laps.pick_laps(range(10,21))
+    # OR selected_laps = driver_laps.pick_laps(1)
 
-        # Get telemetry data at the highest available resolution (100 frequency) and the original one
-        telemetry = selected_laps.get_telemetry(frequency=100)  # Use 'original' for highest granularity
-        telemetry_original= selected_laps.get_telemetry(frequency='original')  # Use 'original' for highest granularity
+    # Get telemetry data at the highest available resolution (100 frequency) and the original one
+    telemetry = selected_laps.get_telemetry(frequency=100)  # Use 'original' for highest granularity
+    telemetry_original= selected_laps.get_telemetry(frequency='original')  # Use 'original' for highest granularity
 
-        # Check if positional telemetry is available (X, Y data)
-        if 'X' in telemetry.columns and 'Y' in telemetry.columns:
-            # Extract the x and y coordinates
-            x_coords = telemetry['X']/10 # Adjust from 1/10m -> 1m scale
-            y_coords = telemetry['Y']/10 # Adjust from 1/10m -> 1m scale
+    # Check if positional telemetry is available (X, Y data)
+    if 'X' in telemetry.columns and 'Y' in telemetry.columns:
+        # Extract the x and y coordinates
+        x_coords = telemetry['X']/10 # Adjust from 1/10m -> 1m scale
+        y_coords = telemetry['Y']/10 # Adjust from 1/10m -> 1m scale
 
 
-        # Check if positional telemetry is available (X, Y data)
-        if 'X' in telemetry_original.columns and 'Y' in telemetry_original.columns:
-            # Extract the x and y coordinates
-            x_coords_original = telemetry_original['X']/10 # Adjust from 1/10m -> 1m scale
-            y_coords_original = telemetry_original['Y']/10 # Adjust from 1/10m -> 1m scale
+    # Check if positional telemetry is available (X, Y data)
+    if 'X' in telemetry_original.columns and 'Y' in telemetry_original.columns:
+        # Extract the x and y coordinates
+        x_coords_original = telemetry_original['X']/10 # Adjust from 1/10m -> 1m scale
+        y_coords_original = telemetry_original['Y']/10 # Adjust from 1/10m -> 1m scale
+
+        # Combine them into a DataFrame
+        position_data = pd.DataFrame({
+            'X': x_coords,
+            'Y': y_coords,
+            'Time': telemetry['Date']  # Add timestamps to check the data frequency
+        })
 
             # Combine them into a DataFrame
-            position_data = pd.DataFrame({
-                'X': x_coords,
-                'Y': y_coords,
-                'Time': telemetry['Date']  # Add timestamps to check the data frequency
-            })
+        position_data_original = pd.DataFrame({
+            'X': x_coords_original,
+            'Y': y_coords_original,
+            'Time': telemetry_original['Date']  # Add timestamps to check the data frequency
+        })
 
-             # Combine them into a DataFrame
-            position_data_original = pd.DataFrame({
-                'X': x_coords_original,
-                'Y': y_coords_original,
-                'Time': telemetry_original['Date']  # Add timestamps to check the data frequency
-            })
-
-            # Calculate the time difference between consecutive telemetry points
-            time_diff = position_data['Time'].diff().dt.total_seconds()
+        # Calculate the time difference between consecutive telemetry points
+        time_diff = position_data['Time'].diff().dt.total_seconds()
 
 
-            # Calculate the time difference between consecutive telemetry points
-            time_diff_original = position_data_original['Time'].diff().dt.total_seconds()
+        # Calculate the time difference between consecutive telemetry points
+        time_diff_original = position_data_original['Time'].diff().dt.total_seconds()
+
+        # Print statistics about the frequency
+        print(f"Telemetry for driver {DRIVER} at 100 frequency:")
+        print(f"Number of data points: {len(position_data)}")
+        print(f"Average time interval between points: {time_diff.mean()} seconds")
+        print(position_data.head())  # Display first few rows of X, Y, and Time data
 
             # Print statistics about the frequency
-            print(f"Telemetry for driver {driver_code} at 100 frequency:")
-            print(f"Number of data points: {len(position_data)}")
-            print(f"Average time interval between points: {time_diff.mean()} seconds")
-            print(position_data.head())  # Display first few rows of X, Y, and Time data
+        print(f"Telemetry  for driver {DRIVER} at original frequency:")
+        print(f"Number of data points: {len(position_data_original)}")
+        print(f"Average time interval between points: {time_diff_original.mean()} seconds")
+        print(position_data_original.head())  # Display first few rows of X, Y, and Time data
+        # Exit loop after finding first driver with valid data
 
-             # Print statistics about the frequency
-            print(f"Telemetry  for driver {driver_code} at original frequency:")
-            print(f"Number of data points: {len(position_data_original)}")
-            print(f"Average time interval between points: {time_diff_original.mean()} seconds")
-            print(position_data_original.head())  # Display first few rows of X, Y, and Time data
-            break  # Exit loop after finding first driver with valid data
+    else:
+        print(f"No positional data (X, Y) available for driver {DRIVER}")
 
-        else:
-            print(f"No positional data (X, Y) available for driver {driver_code}")
-
-    except KeyError as e:
-        print(f"Telemetry not available for driver {driver_code}: {e}")
-    except Exception as e:
-        print(f"Error encountered for driver {driver_code}: {e}")
+except KeyError as e:
+    print(f"Telemetry not available for driver {DRIVER}: {e}")
+except Exception as e:
+    print(f"Error encountered for driver {DRIVER}: {e}")
 
 # Extract the centerline and track width data
 x = df['# x_m'].values  # Adjust based on the actual column name
@@ -183,7 +185,7 @@ sector_times_df.loc[condition5, 'LapTime'] = sector_times_df.loc[condition5, 'Se
                                                  sector_times_df.loc[condition5, 'Sector1Time'] + \
                                                  sector_times_df.loc[condition5, 'Sector2Time']
 
-# Calculate minutes race takes
+# Calculate total number of minutes race takes
 max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
 max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
 total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
@@ -252,7 +254,7 @@ def create_combined_plot():
         ]
     )
 
-    drivers = sector_times_df['Driver'].unique()
+    # drivers = sector_times_df['Driver'].unique()
 
     compound_to_color = {
         'soft': 'red',
@@ -270,43 +272,44 @@ def create_combined_plot():
         'wet': 'x'
     }
 
-    for i, driver in enumerate(drivers):
-        driver_data = sector_times_long[sector_times_long['Driver'] == driver]
+    # for i, driver in enumerate(drivers):
+    driver_data = sector_times_long[sector_times_long['Driver'] == DRIVER]
+    print(driver_data)
 
-        for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
-            sector_data = driver_data[driver_data['Sector'] == sector]
-            fig.add_trace(
-                go.Scatter(
-                    x = sector_data['LapNumber'],
-                    y = sector_data['Time'],
-                    mode = 'lines+markers',
-                    name = f"{driver} {sector}",
-                    visible = (i == 0),
-                    line = dict(shape = 'linear', color = color),
-                    hovertemplate = '%{y}s'
-                ),
-                row = 1, col = 1
-            )
-
-        lap_time_data = sector_times_df[sector_times_df['Driver'] == driver]
-
-        fig.add_trace(go.Scatter(
-            x = lap_time_data['LapNumber'],
-            y = lap_time_data['LapTime'],
-            mode = 'lines+markers',
-            name = driver,
-            visible = (i == 0),
-            marker = dict(
-                size = 8,
-                color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
-                symbol = lap_time_data['Compound'].map(lambda  x: compound_to_marker.get(x.lower(), 'cross'))
+    for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
+        sector_data = driver_data[driver_data['Sector'] == sector]
+        fig.add_trace(
+            go.Scatter(
+                x = sector_data['LapNumber'],
+                y = sector_data['Time'],
+                mode = 'lines+markers',
+                name = f"{DRIVER} {sector}",
+                # visible = (i == 0),
+                line = dict(shape = 'linear', color = color),
+                hovertemplate = '%{y}s'
             ),
-            hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
-            text = lap_time_data['Compound']
-        ), row = 1, col = 2)
+            row = 1, col = 1
+        )
 
-    dropdown_buttons = []
-    traces_per_driver = 4
+    lap_time_data = sector_times_df[sector_times_df['Driver'] == DRIVER]
+
+    fig.add_trace(go.Scatter(
+        x = lap_time_data['LapNumber'],
+        y = lap_time_data['LapTime'],
+        mode = 'lines+markers',
+        name = DRIVER,
+        # visible = (i == 0),
+        marker = dict(
+            size = 8,
+            color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
+            symbol = lap_time_data['Compound'].map(lambda  x: compound_to_marker.get(x.lower(), 'cross'))
+        ),
+        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
+        text = lap_time_data['Compound']
+    ), row = 1, col = 2)
+
+    # dropdown_buttons = []
+    # traces_per_driver = 4
 
     fig.add_trace(
         go.Scatter(
@@ -321,18 +324,18 @@ def create_combined_plot():
         row = 1, col= 2, secondary_y=True
     )
 
-    for i, driver in enumerate(drivers):
-        visibility = [False] * len(fig.data)
-        visibility[i * traces_per_driver:(i + 1) * traces_per_driver] = [True] * traces_per_driver
+    # for i, driver in enumerate(drivers):
+    #     visibility = [False] * len(fig.data)
+    #     visibility[i * traces_per_driver:(i + 1) * traces_per_driver] = [True] * traces_per_driver
 
-        dropdown_buttons.append(
-            dict(
-                label = driver,
-                method = "update",
-                args = [{"visible": visibility},
-                        {"title": f"Sector Times and Lap Time for {driver}"}],
-            )
-        )
+    #     dropdown_buttons.append(
+    #         dict(
+    #             label = driver,
+    #             method = "update",
+    #             args = [{"visible": visibility},
+    #                     {"title": f"Sector Times and Lap Time for {driver}"}],
+    #         )
+    #     )
     
     offset_x = 71
     offset_y = 198
@@ -402,7 +405,7 @@ def create_combined_plot():
     fig.update_layout(
         updatemenus = [dict(
             active = 0,
-            buttons = dropdown_buttons,
+            # buttons = dropdown_buttons,
             direction = "down",
             x = 1.15,
             xanchor = "left",
