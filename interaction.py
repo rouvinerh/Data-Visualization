@@ -305,7 +305,8 @@ def create_combined_plot():
             symbol = lap_time_data['Compound'].map(lambda  x: compound_to_marker.get(x.lower(), 'cross'))
         ),
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
-        text = lap_time_data['Compound']
+        text = lap_time_data['Compound'],
+        showlegend = False
     ), row = 1, col = 2)
 
     # dropdown_buttons = []
