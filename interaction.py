@@ -9,29 +9,27 @@ from matplotlib.path import Path
 from plotly.subplots import make_subplots
 import math
 
-# Load race constants
+### Set constants here for code ###
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'HAM'
+DRIVER = 'VER'
 
-# Load session, race data and weather data
+### Load session, race data and weather data ###
 race = ff1.get_session(YEAR, GRAND_PRIX, SESSION_TYPE)
 race.load(weather = True)
 laps = race.laps
 weather_data = race.weather_data
-# available_drivers = race.drivers
 
-# Load CSV Data
+### Load CSV Data ###
 track_data_url = "https://raw.githubusercontent.com/TUMFTM/racetrack-database/master/tracks/Hockenheim.csv"
 df = pd.read_csv(track_data_url)
 
-# Load the ideal racing line data
+### Load the ideal racing line data ###
 raceline_url = 'https://github.com/TUMFTM/racetrack-database/raw/e59595d1f3573b30d1ded6a08984935b957688e0/racelines/Hockenheim.csv'
 raceline_data = pd.read_csv(raceline_url, comment='#', header=None)  # Load the raceline data
 
-# Set laps for drivers
-# for driver_code in available_drivers:
+### Set laps for drivers (Max's) ###
 try:
     # Get laps for the driver
     driver_laps = race.laps.pick_driver(DRIVER)
@@ -39,11 +37,11 @@ try:
     # Check if there are any laps available for this driver
     if driver_laps.empty:
         print(f"No laps available for driver {DRIVER}")
-        
 
     # Extract telemetry for the fastest lap of this driver
     selected_laps = driver_laps.pick_laps(1)
     #selected_laps = driver_laps#.pick_fastest() **************************** ROUVIN HERE SELECT THE LAP(S) YOU WANT
+    # **** IM JUST GONNA GO WITH THIS FIRST - Rouvin
     # OR selected_laps = driver_laps.pick_laps(range(10,21))
     # OR selected_laps = driver_laps.pick_laps(1)
 
@@ -85,18 +83,18 @@ try:
         # Calculate the time difference between consecutive telemetry points
         time_diff_original = position_data_original['Time'].diff().dt.total_seconds()
 
-        # Print statistics about the frequency
-        print(f"Telemetry for driver {DRIVER} at 100 frequency:")
-        print(f"Number of data points: {len(position_data)}")
-        print(f"Average time interval between points: {time_diff.mean()} seconds")
-        print(position_data.head())  # Display first few rows of X, Y, and Time data
+        # # Print statistics about the frequency
+        # print(f"Telemetry for driver {DRIVER} at 100 frequency:")
+        # print(f"Number of data points: {len(position_data)}")
+        # print(f"Average time interval between points: {time_diff.mean()} seconds")
+        # print(position_data.head())  # Display first few rows of X, Y, and Time data
 
-            # Print statistics about the frequency
-        print(f"Telemetry  for driver {DRIVER} at original frequency:")
-        print(f"Number of data points: {len(position_data_original)}")
-        print(f"Average time interval between points: {time_diff_original.mean()} seconds")
-        print(position_data_original.head())  # Display first few rows of X, Y, and Time data
-        # Exit loop after finding first driver with valid data
+        #     # Print statistics about the frequency
+        # print(f"Telemetry  for driver {DRIVER} at original frequency:")
+        # print(f"Number of data points: {len(position_data_original)}")
+        # print(f"Average time interval between points: {time_diff_original.mean()} seconds")
+        # print(position_data_original.head())  # Display first few rows of X, Y, and Time data
+        # # Exit loop after finding first driver with valid data
 
     else:
         print(f"No positional data (X, Y) available for driver {DRIVER}")
@@ -106,13 +104,13 @@ except KeyError as e:
 except Exception as e:
     print(f"Error encountered for driver {DRIVER}: {e}")
 
-# Extract the centerline and track width data
+### Extract the centerline and track width data (Max's) ###
 x = df['# x_m'].values  # Adjust based on the actual column name
 y = df['y_m'].values    # Adjust based on the actual column name
 track_width_right = df['w_tr_right_m'].values
 track_width_left = df['w_tr_left_m'].values
 
-#print(track_width_right[1])
+# print(track_width_right[1])
 
 # Calculate the direction vectors (tangent vectors) between consecutive points
 dx = np.diff(x)
@@ -154,7 +152,7 @@ y_left = np.append(y_left, y_left[0])
 # plt.legend()
 # plt.show()
 
-# Define parameters that are interesting
+### Define parameters that are interesting (Mad's) ###
 sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
 
 # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
@@ -185,19 +183,21 @@ sector_times_df.loc[condition5, 'LapTime'] = sector_times_df.loc[condition5, 'Se
                                                  sector_times_df.loc[condition5, 'Sector1Time'] + \
                                                  sector_times_df.loc[condition5, 'Sector2Time']
 
-# Calculate total number of minutes race takes
+### Calculate total number of minutes race takes ###
 max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
 max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
 total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
 total_race_time_minutes = math.ceil(total_race_time_seconds / 60)
+max_laps_driver_laps = max_laps_driver_laps.copy()  
 max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
 
-# Track minutes where changes happen
+### Track minutes where changes in Rainfall happens ###
 change_indexes = [0]
 for i in range(1, total_race_time_minutes):
     if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
         change_indexes.append(i)
 
+### Approximate the minute to the closest lap where Rainfall changed ###
 approximate_laps = []
 for minute in change_indexes:
     target_time_seconds = minute * 60 
@@ -246,24 +246,24 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
 def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 2,
-        subplot_titles=["Sector Times", "Lap Times and Events", "Track Map"],
+        subplot_titles=["Lap Times and Events", "Track Map", "Sector Times with Compounds"],
         vertical_spacing = 0.1,
        specs=[
             [{'secondary_y': True}, {'secondary_y': True}],
-            [{'colspan': 2}, None]
+            [{'secondary_y': True}, {'secondary_y': True}]
         ]
     )
 
-    # drivers = sector_times_df['Driver'].unique()
-
+    ### Colours of Tire Compounds
     compound_to_color = {
-        'soft': 'red',
-        'medium': 'blue',
-        'hard': 'orange',
-        'intermediate': 'green',
-        'wet': 'purple'
+        'soft': '#377eb8',        
+        'medium': '#ff7f00',      
+        'hard': '#4daf4a',        
+        'intermediate': '#f781bf',
+        'wet': '#a65628'          
     }
 
+    ### Shapes of Tire Compounds for Plot 1
     compound_to_marker = {
         'soft': 'circle',
         'medium': 'square',
@@ -272,33 +272,28 @@ def create_combined_plot():
         'wet': 'x'
     }
 
-    # for i, driver in enumerate(drivers):
-    driver_data = sector_times_long[sector_times_long['Driver'] == DRIVER]
-    print(driver_data)
-
-    for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
-        sector_data = driver_data[driver_data['Sector'] == sector]
+    ### For Legend on the right
+    for compound, color in compound_to_color.items():
         fig.add_trace(
             go.Scatter(
-                x = sector_data['LapNumber'],
-                y = sector_data['Time'],
-                mode = 'lines+markers',
-                name = f"{DRIVER} {sector}",
-                # visible = (i == 0),
-                line = dict(shape = 'linear', color = color),
-                hovertemplate = '%{y}s'
+                x=[None], 
+                y=[None],  
+                mode='markers',
+                marker=dict(size=10, color=color),
+                name=f'{compound.capitalize()}',
+                showlegend=True,
+                legendgroup='compounds' 
             ),
-            row = 1, col = 1
+            row=1, col=1
         )
 
+    ### Plot 1: Scatterplot ###
     lap_time_data = sector_times_df[sector_times_df['Driver'] == DRIVER]
-
     fig.add_trace(go.Scatter(
         x = lap_time_data['LapNumber'],
         y = lap_time_data['LapTime'],
-        mode = 'lines+markers',
-        name = DRIVER,
-        # visible = (i == 0),
+        mode = 'markers',
+        name = '<extra></extra>', 
         marker = dict(
             size = 8,
             color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
@@ -307,11 +302,9 @@ def create_combined_plot():
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
         text = lap_time_data['Compound'],
         showlegend = False
-    ), row = 1, col = 2)
+    ), row = 1, col = 1)
 
-    # dropdown_buttons = []
-    # traces_per_driver = 4
-
+    ### Plot 1: Scatterplot Conditions ### 
     fig.add_trace(
         go.Scatter(
             x = approximate_laps,  
@@ -320,33 +313,22 @@ def create_combined_plot():
             text = ['🌧'] * len(approximate_laps),
             textposition = 'middle center',
             name = 'Rainfall Change Points',
-            showlegend = False
+            showlegend = False,
+            hoverinfo='none'
         ),
-        row = 1, col= 2, secondary_y=True
+        row = 1, col= 1, secondary_y=True
     )
 
-    # for i, driver in enumerate(drivers):
-    #     visibility = [False] * len(fig.data)
-    #     visibility[i * traces_per_driver:(i + 1) * traces_per_driver] = [True] * traces_per_driver
-
-    #     dropdown_buttons.append(
-    #         dict(
-    #             label = driver,
-    #             method = "update",
-    #             args = [{"visible": visibility},
-    #                     {"title": f"Sector Times and Lap Time for {driver}"}],
-    #         )
-    #     )
-    
+    ### Plot 2: Race Map ###
     offset_x = 71
     offset_y = 198
 
     # Add the telemetry data as a line plot
-    fig.add_trace(go.Scatter(x=x_coords, y=y_coords, mode='lines',name=' data f=100',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=x_coords_original, y=y_coords_original, mode='markers',name='original data',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=x_left-offset_x, y=y_left-offset_y, mode='lines',name='right boundary',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=x_right-offset_x, y=y_right-offset_y, mode='lines',name='left boundary',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=raceline_data[0]-offset_x, y=raceline_data[1]-offset_y, mode='lines',name='Ideal racing line',showlegend = False), row = 2, col = 1)
+    fig.add_trace(go.Scatter(x=x_coords, y=y_coords, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_coords_original, y=y_coords_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_left-offset_x, y=y_left-offset_y, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_right-offset_x, y=y_right-offset_y, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=raceline_data[0]-offset_x, y=raceline_data[1]-offset_y, mode='lines',name='Ideal racing line',showlegend = False, ), row = 1, col = 2)
 
     x_left_shifted = x_left - offset_x
     y_left_shifted = y_left - offset_y
@@ -398,41 +380,65 @@ def create_combined_plot():
                 valid_y.append(y)
 
     # Customize layout
-    fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=valid_x, y=valid_y, mode='lines',name=' data f=100',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 2, col = 1)
-    fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 2, col = 1)
+    fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=valid_x, y=valid_y, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
 
+    ### Plot 3: Stacked Bar Chart ###
+    driver_data = sector_times_long[sector_times_long['Driver'] == DRIVER]
+    for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
+        sector_data = driver_data[driver_data['Sector'] == sector]
+
+        fig.add_trace(
+            go.Bar(
+                x=sector_data['LapNumber'],
+                y=sector_data['Time'],
+                name=f"{sector}",
+                showlegend = False,
+                marker = dict(
+                    color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
+                    line=dict(color='black', width=1)
+                ),
+            ),
+            row = 2, col = 1
+        )
+    
+    ### Plot 4: Line Graph ###
+    # To be implemented #
+
+    ### Update Layout of the Graphs ###
     fig.update_layout(
-        updatemenus = [dict(
-            active = 0,
-            # buttons = dropdown_buttons,
-            direction = "down",
-            x = 1.15,
-            xanchor = "left",
-            y = 1.10,
-            yanchor = "top",
+        barmode='stack',
+        updatemenus=[dict(
+            active=0,
+            direction="down",
+            x=1.15,
+            xanchor="left",
+            y=1.10,
+            yanchor="top",
         )],
-        hovermode = "x unified",
-        height = 1000,
-        legend = dict(
-            x = 0,
-            y = 1,
-            bgcolor = "White",
-            bordercolor = "Black",
-            borderwidth = 2
-        ), 
+        hovermode="x unified",
+        height=1000,
+        legend=dict(
+            x=1,
+            y=1,  
+            traceorder='normal',
+            orientation='v', 
+            xanchor='left',
+            yanchor='top',
+            bgcolor="White",
+            bordercolor="Black",
+            borderwidth=2
+        ),
     )
 
-    fig.update_xaxes(title_text = "Lap Number", row = 1, col = 2)
+    ### Update Axis ###
     fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
-    fig.update_xaxes(title_text = "X-Coordinate", row = 2, col = 1)
-    fig.update_yaxes(title_text = "Y Coordinate", row = 2, col = 1)
-    fig.update_yaxes(title_text = "Sector Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
-    fig.update_yaxes(title_text = "Lap Time (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 2)
+    fig.update_xaxes(title_text = "X-Coordinate", row = 1, col = 2)
+    fig.update_yaxes(title_text = "Y Coordinate", row = 1, col = 2)
+    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
     fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 1)
-    fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 2)
-
     fig.show()
 
 create_combined_plot()
