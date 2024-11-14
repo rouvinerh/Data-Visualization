@@ -254,7 +254,7 @@ def create_combined_plot():
         ]
     )
 
-    ### Colours of Tire Compounds
+    ### Colours of Tire Compounds ###
     compound_to_color = {
         'soft': '#377eb8',        
         'medium': '#ff7f00',      
@@ -263,7 +263,7 @@ def create_combined_plot():
         'wet': '#a65628'          
     }
 
-    ### Shapes of Tire Compounds for Plot 1
+    ### Shapes of Tire Compounds for Plot 1 ###
     compound_to_marker = {
         'soft': 'circle',
         'medium': 'square',
@@ -272,7 +272,7 @@ def create_combined_plot():
         'wet': 'x'
     }
 
-    ### For Legend on the right
+    ### For Legend on the right ###
     for compound, color in compound_to_color.items():
         fig.add_trace(
             go.Scatter(
@@ -305,19 +305,38 @@ def create_combined_plot():
     ), row = 1, col = 1)
 
     ### Plot 1: Scatterplot Conditions ### 
+    ### Rain
     fig.add_trace(
         go.Scatter(
             x = approximate_laps,  
             y = [180] * len(approximate_laps), 
             mode = 'text',  
-            text = ['🌧'] * len(approximate_laps),
+            text = ['🌧️'] * len(approximate_laps),
             textposition = 'middle center',
             name = 'Rainfall Change Points',
             showlegend = False,
-            hoverinfo='none'
+            hoverinfo='none',
+            textfont=dict(
+                size=25 
+            )
         ),
         row = 1, col= 1, secondary_y=True
     )
+
+    ### Flags
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x = approximate_laps,  
+    #         y = [180] * len(approximate_laps), 
+    #         mode = 'text',  
+    #         text = ['🚩'] * len(approximate_laps),
+    #         textposition = 'middle center',
+    #         name = 'Rainfall Change Points',
+    #         showlegend = False,
+    #         hoverinfo='none',
+    #     ),
+    #     row = 1, col= 1, secondary_y=True
+    # )
 
     ### Plot 2: Race Map ###
     offset_x = 71
