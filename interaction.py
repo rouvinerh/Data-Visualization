@@ -305,7 +305,7 @@ def create_combined_plot():
     ), row = 1, col = 1)
 
     ### Plot 1: Scatterplot Conditions ### 
-    ### Rain
+    ## Rain
     fig.add_trace(
         go.Scatter(
             x = approximate_laps,  
@@ -320,7 +320,7 @@ def create_combined_plot():
                 size=25 
             )
         ),
-        row = 1, col= 1, secondary_y=True
+        row = 1, col= 1
     )
 
     ### Flags
@@ -424,7 +424,7 @@ def create_combined_plot():
         )
     
     ### Plot 4: Line Graph ###
-    # To be implemented #
+    ### To be implemented ###
 
     ### Update Layout of the Graphs ###
     fig.update_layout(
@@ -453,11 +453,19 @@ def create_combined_plot():
     )
 
     ### Update Axis ###
+
+    ## Plot 1
     fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
+    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
+
+    ## Plot 2
     fig.update_xaxes(title_text = "X-Coordinate", row = 1, col = 2)
     fig.update_yaxes(title_text = "Y Coordinate", row = 1, col = 2)
-    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
-    fig.update_xaxes(range = [-1, sector_times_df['LapNumber'].max()], row = 1, col = 1)
+
+    ## Plot 3
+    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
+
     fig.show()
 
 create_combined_plot()
