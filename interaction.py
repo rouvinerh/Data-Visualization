@@ -456,15 +456,18 @@ def create_combined_plot():
 
     ## Plot 1
     fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
-    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
 
     ## Plot 2
-    fig.update_xaxes(title_text = "X-Coordinate", row = 1, col = 2)
-    fig.update_yaxes(title_text = "Y Coordinate", row = 1, col = 2)
+    fig.update_xaxes(title_text = "X Coordinate (m)", row = 1, col = 2)
+    fig.update_yaxes(title_text = "Y Coordinate (m)", row = 1, col = 2)
 
     ## Plot 3
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
-    fig.update_yaxes(title_text = "Lap Times", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
+
+    ## Plot 4
+    
 
     fig.show()
 
