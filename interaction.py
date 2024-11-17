@@ -288,7 +288,7 @@ def create_combined_plot():
         )
 
     ### Plot 1: Scatterplot ###
-    lap_time_data = sector_times_df[sector_times_df['Driver'] == DRIVER]
+    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
     fig.add_trace(go.Scatter(
         x = lap_time_data['LapNumber'],
         y = lap_time_data['LapTime'],
@@ -405,7 +405,7 @@ def create_combined_plot():
     fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
 
     ### Plot 3: Stacked Bar Chart ###
-    driver_data = sector_times_long[sector_times_long['Driver'] == DRIVER]
+    driver_data = sector_times_long[(sector_times_long['Driver'] == DRIVER) & (sector_times_long['LapNumber'] != 65)]
     for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
         sector_data = driver_data[driver_data['Sector'] == sector]
 
@@ -464,7 +464,7 @@ def create_combined_plot():
 
     ## Plot 3
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
-    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 2, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1], row = 2, col = 1)
 
     ## Plot 4
     
