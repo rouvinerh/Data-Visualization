@@ -305,13 +305,14 @@ def create_combined_plot():
     ), row = 1, col = 1)
 
     ### Plot 1: Scatterplot Conditions ### 
+    rain_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_laps))]
     ## Rain
     fig.add_trace(
         go.Scatter(
             x = approximate_laps,  
             y = [180] * len(approximate_laps), 
             mode = 'text',  
-            text = ['🌧️'] * len(approximate_laps),
+            text = rain_emojis,
             textposition = 'middle center',
             name = 'Rainfall Change Points',
             showlegend = False,
@@ -455,7 +456,7 @@ def create_combined_plot():
     ### Update Axis ###
 
     ## Plot 1
-    fig.update_xaxes(title_text = "Lap Number", row = 1, col = 1)
+    fig.update_xaxes(range=[0, 70], title_text = "Lap Number", row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
 
     ## Plot 2
