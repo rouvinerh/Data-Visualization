@@ -15,6 +15,7 @@ GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'VER'
 
+
 ### Load session, race data and weather data ###
 race = ff1.get_session(YEAR, GRAND_PRIX, SESSION_TYPE)
 race.load(weather = True)
@@ -213,6 +214,28 @@ for minute in change_indexes:
     
     approximate_laps.append(round(exact_lap, 1))
 
+
+### Process lap events ###
+lap_events = laps[(laps['Driver'] == 'VER')]
+def get_worst_status(status):
+    status_digits = [int(digit) for digit in str(status)]
+    return max(track_status_hierarchy.get(d, float('inf')) for d in status_digits)
+
+track_status_hierarchy = {
+    1: 1,  # All Clear
+    2: 2,  # Yellow Flag
+    6: 3,  # Virtual Safety Car deployed
+    7: 3,  # Virtual Safety Car ending
+    4: 4,  # Safety Car
+    5: 5   # Red Flag
+}
+
+lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(get_worst_status)
+
+lap_events = lap_events.reset_index(drop=True)
+lap_events.index += 1
+lap_events = lap_events.iloc[:-1]
+print(lap_events)
 # Create dummy columns to indicate the fastest times for each sector and lap time
 sector_times_df['FastestSector1'] = (sector_times_df['Sector1Time'] == sector_times_df.groupby('Driver')['Sector1Time'].transform('min')).astype(int)
 sector_times_df['FastestSector2'] = (sector_times_df['Sector2Time'] == sector_times_df.groupby('Driver')['Sector2Time'].transform('min')).astype(int)
@@ -324,20 +347,31 @@ def create_combined_plot():
         row = 1, col= 1
     )
 
-    ### Flags
-    # fig.add_trace(
-    #     go.Scatter(
-    #         x = approximate_laps,  
-    #         y = [180] * len(approximate_laps), 
-    #         mode = 'text',  
-    #         text = ['🚩'] * len(approximate_laps),
-    #         textposition = 'middle center',
-    #         name = 'Rainfall Change Points',
-    #         showlegend = False,
-    #         hoverinfo='none',
-    #     ),
-    #     row = 1, col= 1, secondary_y=True
-    # )
+    ### Events
+    emoji_map = {
+        1: '',           # All Clear (no emoji)
+        2: '⚠️',         # Yellow Flag
+        3: '🚗',         # Virtual Safety Car
+        4: '🚓',         # Safety Car
+        5: '🚩'          # Red Flag
+    }
+    status_emojis = [emoji_map.get(status, '') for status in lap_events['TrackStatusHierarchy']]
+    fig.add_trace(
+        go.Scatter(
+            x = lap_events.index,  
+            y = [160] * len(lap_events), 
+            mode = 'text',  
+            text = status_emojis,
+            textposition = 'middle center',
+            name = 'Lap Events',
+            showlegend = False,
+            hoverinfo='none',
+            textfont=dict(
+                size=25 
+            )
+        ),
+        row = 1, col= 1
+    )
 
     ### Plot 2: Race Map ###
     offset_x = 71
