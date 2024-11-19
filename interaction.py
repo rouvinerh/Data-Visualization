@@ -84,7 +84,7 @@ if 'X' in telemetry_original.columns and 'Y' in telemetry_original.columns:
         'Time': telemetry_original['Date']  # Add timestamps to check the data frequency
     })
 
-        # Combine them into a DataFrame
+    # Combine them into a DataFrame
     position_data_original = pd.DataFrame({
         'X': x_coords_original,
         'Y': y_coords_original,
@@ -96,8 +96,6 @@ if 'X' in telemetry_original.columns and 'Y' in telemetry_original.columns:
 
     # Calculate the time difference between consecutive telemetry points
     time_diff_original = position_data_original['Time'].diff().dt.total_seconds()
-
-
 
 ### Extract the centerline and track width data (Max's) ###
 x = df['# x_m'].values  # Adjust based on the actual column name
@@ -199,11 +197,6 @@ for minute in change_indexes:
 
 
 ### Process lap events ###
-lap_events = laps[(laps['Driver'] == 'VER')]
-def get_worst_status(status):
-    status_digits = [int(digit) for digit in str(status)]
-    return max(track_status_hierarchy.get(d, float('inf')) for d in status_digits)
-
 track_status_hierarchy = {
     1: 1,  # All Clear
     2: 2,  # Yellow Flag
@@ -212,8 +205,8 @@ track_status_hierarchy = {
     4: 4,  # Safety Car
     5: 5   # Red Flag
 }
-
-lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(get_worst_status)
+lap_events = laps[(laps['Driver'] == 'VER')]
+lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(lambda status: track_status_hierarchy.get(int(str(status)[0]), float('inf')))
 lap_events = lap_events.reset_index(drop=True)
 lap_events.index += 1
 lap_events = lap_events.iloc[:-1]
@@ -251,7 +244,7 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
 def create_combined_plot():
     fig = make_subplots(
         rows = 2, cols = 2,
-        subplot_titles=["Lap Times and Events", "Track Map", "Sector Times with Compounds"],
+        subplot_titles=["Lap Times and Events", "Track Map", "Sector Times with Compounds", "Relative Position Between Boundaries"],
         vertical_spacing = 0.1,
        specs=[
             [{'secondary_y': True}, {'secondary_y': True}],
@@ -522,7 +515,7 @@ def create_combined_plot():
 
         relative_positions_all_laps.append(relative_positions)
     for i, lap_number in enumerate(selected_lap_numbers):
-    # Access distances for the current lap
+        # Access distances for the current lap
         distances = position_data_100[i]['Distance'].values
 
         # Access relative_positions for the current lap
@@ -556,7 +549,6 @@ def create_combined_plot():
         y1=1,
         line=dict(color="Black", width=3, dash="solid"),  # Changed color, width, and dash
     ), row = 2, col = 2)
-
 
     # Add annotations for boundary labels (modified)
     fig.add_annotation(
@@ -604,7 +596,7 @@ def create_combined_plot():
         ),
     )
 
-    ### Update Axis ###
+    ### Update Axes ###
 
     ## Plot 1
     fig.update_xaxes(range=[0, 70], title_text = "Lap Number", row = 1, col = 1)
