@@ -9,6 +9,7 @@ import matplotlib.patches as patches
 from matplotlib.path import Path
 from plotly.subplots import make_subplots
 from shapely.geometry import Point, Polygon, LineString
+from dash import Dash, dcc, html, Input, Output, callback
 
 ### Set constants here for code ###
 YEAR = 2019
@@ -174,7 +175,7 @@ max_laps_driver_laps = max_laps_driver_laps.copy()
 max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
 
 ### Track minutes where changes in Rainfall happens ###
-change_indexes = [0]
+change_indexes = [0, 20]
 for i in range(1, total_race_time_minutes):
     if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
         change_indexes.append(i)
@@ -197,7 +198,7 @@ for minute in change_indexes:
 
 
 ### Process lap events ###
-track_status_hierarchy = {
+EVENT_HIERARCHY = {
     1: 1,  # All Clear
     2: 2,  # Yellow Flag
     6: 3,  # Virtual Safety Car deployed
@@ -206,7 +207,7 @@ track_status_hierarchy = {
     5: 5   # Red Flag
 }
 lap_events = laps[(laps['Driver'] == 'VER')]
-lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(lambda status: track_status_hierarchy.get(int(str(status)[0]), float('inf')))
+lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(lambda status: EVENT_HIERARCHY.get(int(str(status)[0]), float('inf')))
 lap_events = lap_events.reset_index(drop=True)
 lap_events.index += 1
 lap_events = lap_events.iloc[:-1]
@@ -241,7 +242,11 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
                                          value_vars = ['Sector1Time', 'Sector2Time', 'Sector3Time'], 
                                          var_name = 'Sector', value_name = 'Time')
 
+## This bad boy creates our figure
 def create_combined_plot():
+
+    ###  2 x 2 matrix of graphs
+    ### Row = 1, Col = 1 is Scatterplot, etc.
     fig = make_subplots(
         rows = 2, cols = 2,
         subplot_titles=["Lap Times and Events", "Track Map", "Sector Times with Compounds", "Relative Position Between Boundaries"],
@@ -252,8 +257,10 @@ def create_combined_plot():
         ]
     )
 
+    ### Colours and Emojis ###
+
     ### Colours of Tire Compounds ###
-    compound_to_color = {
+    TIRE_COLOUR = {
         'soft': '#377eb8',        
         'medium': '#ff7f00',      
         'hard': '#4daf4a',        
@@ -261,8 +268,8 @@ def create_combined_plot():
         'wet': '#a65628'          
     }
 
-    ### Shapes of Tire Compounds for Plot 1 ###
-    compound_to_marker = {
+    ### Shapes of Tire Compounds ###
+    TIRE_SHAPE = {
         'soft': 'circle',
         'medium': 'square',
         'hard': 'triangle-up',
@@ -270,8 +277,21 @@ def create_combined_plot():
         'wet': 'x'
     }
 
+    ### Lap Event Emojis
+    EVENT_EMOJIS = {
+        1: '',           # All Clear (no emoji)
+        2: '⚠️',         # Yellow Flag
+        3: '🚗',         # Virtual Safety Car
+        4: '🚓',         # Safety Car
+        5: '🚩'          # Red Flag
+    }
+    status_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
+
+    # Alternating emoijs for rain
+    WEATHER_EMOJIS = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_laps))]
+
     ### For Legend on the right ###
-    for compound, color in compound_to_color.items():
+    for compound, color in TIRE_COLOUR.items():
         fig.add_trace(
             go.Scatter(
                 x=[None], 
@@ -294,8 +314,8 @@ def create_combined_plot():
         name = '<extra></extra>', 
         marker = dict(
             size = 8,
-            color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
-            symbol = lap_time_data['Compound'].map(lambda  x: compound_to_marker.get(x.lower(), 'cross'))
+            color = lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
+            symbol = lap_time_data['Compound'].map(lambda  x: TIRE_SHAPE.get(x.lower(), 'cross'))
         ),
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
         text = lap_time_data['Compound'],
@@ -303,14 +323,13 @@ def create_combined_plot():
     ), row = 1, col = 1)
 
     ### Plot 1: Scatterplot Conditions ### 
-    rain_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_laps))]
     ## Rain
     fig.add_trace(
         go.Scatter(
             x = approximate_laps,  
             y = [180] * len(approximate_laps), 
             mode = 'text',  
-            text = rain_emojis,
+            text = WEATHER_EMOJIS,
             textposition = 'middle center',
             name = 'Rainfall Change Points',
             showlegend = False,
@@ -323,14 +342,6 @@ def create_combined_plot():
     )
 
     ### Events
-    emoji_map = {
-        1: '',           # All Clear (no emoji)
-        2: '⚠️',         # Yellow Flag
-        3: '🚗',         # Virtual Safety Car
-        4: '🚓',         # Safety Car
-        5: '🚩'          # Red Flag
-    }
-    status_emojis = [emoji_map.get(status, '') for status in lap_events['TrackStatusHierarchy']]
     fig.add_trace(
         go.Scatter(
             x = lap_events.index,  
@@ -422,21 +433,8 @@ def create_combined_plot():
                 valid_x_original.append(x)
                 valid_y_original.append(y)
 
-    # Arrays to store valid points
-    valid_x = []
-    valid_y = []
-
-    # Iterate over each point in x_coords_original and y_coords_original
-    for x, y in zip(x_coords_original, y_coords_original):
-        point = (x, y)
-
-        # Check if the point is inside the right boundary polygon
-        if left_boundary_path.contains_point(point):
-            # Check if the point is outside the left boundary polygon
-            if not right_boundary_path.contains_point(point):
-                # If it's inside the right boundary and outside the left boundary, it's valid
-                valid_x.append(x)
-                valid_y.append(y)
+    valid_x = valid_x_original
+    valid_y = valid_y_original
 
     # Customize layout
     fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
@@ -456,7 +454,7 @@ def create_combined_plot():
                 name=f"{sector}",
                 showlegend = False,
                 marker = dict(
-                    color = lap_time_data['Compound'].map(lambda x: compound_to_color.get(x.lower(), 'black')),
+                    color = lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
                     line=dict(color='black', width=1)
                 ),
             ),
@@ -614,6 +612,16 @@ def create_combined_plot():
     fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
     fig.update_yaxes(title_text = "Relative Position (0 = Outer Boundary, 1 = Inner Boundary)", row = 2, col = 2)
  
-    fig.show()
+    return fig
 
-create_combined_plot()
+
+app = Dash(__name__)
+app.layout = html.Div ([
+    html.H1("F1 Telemetry Dashboard", style={'textAlign': 'center'}),
+    dcc.Graph(
+        id='combined-plot',
+        figure=create_combined_plot()
+    )
+])
+
+app.run()
