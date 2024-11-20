@@ -1,11 +1,9 @@
 import math
 import fastf1 as ff1
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from matplotlib.path import Path
 from plotly.subplots import make_subplots
 from shapely.geometry import Point, Polygon, LineString
@@ -175,7 +173,7 @@ max_laps_driver_laps = max_laps_driver_laps.copy()
 max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
 
 ### Track minutes where changes in Rainfall happens ###
-change_indexes = [0, 20]
+change_indexes = [0]
 for i in range(1, total_race_time_minutes):
     if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
         change_indexes.append(i)
@@ -242,7 +240,39 @@ sector_times_long = sector_times_df.melt(id_vars = ['Driver', 'LapNumber'],
                                          value_vars = ['Sector1Time', 'Sector2Time', 'Sector3Time'], 
                                          var_name = 'Sector', value_name = 'Time')
 
-## This bad boy creates our figure
+### Colours and Emojis ###
+### Colours of Tire Compounds ###
+TIRE_COLOUR = {
+    'soft': '#377eb8',        
+    'medium': '#ff7f00',      
+    'hard': '#4daf4a',        
+    'intermediate': '#f781bf',
+    'wet': '#a65628'          
+}
+
+### Shapes of Tire Compounds ###
+TIRE_SHAPE = {
+    'soft': 'circle',
+    'medium': 'square',
+    'hard': 'triangle-up',
+    'intermediate': 'diamond',
+    'wet': 'x'
+}
+
+### Lap Event Emojis
+EVENT_EMOJIS = {
+    1: '',           # All Clear (no emoji)
+    2: '⚠️',         # Yellow Flag
+    3: '🚗',         # Virtual Safety Car
+    4: '🚓',         # Safety Car
+    5: '🚩'          # Red Flag
+}
+status_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
+print(status_emojis)
+# Alternating emoijs for rain
+WEATHER_EMOJIS = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_laps))]
+
+## **Slaps top** This bad boy creates 4 of our figures
 def create_combined_plot():
 
     ###  2 x 2 matrix of graphs
@@ -256,39 +286,6 @@ def create_combined_plot():
             [{'secondary_y': True}, {'secondary_y': True}]
         ]
     )
-
-    ### Colours and Emojis ###
-
-    ### Colours of Tire Compounds ###
-    TIRE_COLOUR = {
-        'soft': '#377eb8',        
-        'medium': '#ff7f00',      
-        'hard': '#4daf4a',        
-        'intermediate': '#f781bf',
-        'wet': '#a65628'          
-    }
-
-    ### Shapes of Tire Compounds ###
-    TIRE_SHAPE = {
-        'soft': 'circle',
-        'medium': 'square',
-        'hard': 'triangle-up',
-        'intermediate': 'diamond',
-        'wet': 'x'
-    }
-
-    ### Lap Event Emojis
-    EVENT_EMOJIS = {
-        1: '',           # All Clear (no emoji)
-        2: '⚠️',         # Yellow Flag
-        3: '🚗',         # Virtual Safety Car
-        4: '🚓',         # Safety Car
-        5: '🚩'          # Red Flag
-    }
-    status_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
-
-    # Alternating emoijs for rain
-    WEATHER_EMOJIS = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_laps))]
 
     ### For Legend on the right ###
     for compound, color in TIRE_COLOUR.items():
@@ -363,21 +360,10 @@ def create_combined_plot():
     offset_x = 71
     offset_y = 198
 
-    # Add the telemetry data as a line plot
-    # fig.add_trace(go.Scatter(x=x_coords, y=y_coords, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
-    # fig.add_trace(go.Scatter(x=x_coords_original, y=y_coords_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
-    # fig.add_trace(go.Scatter(x=x_left-offset_x, y=y_left-offset_y, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
-    # fig.add_trace(go.Scatter(x=x_right-offset_x, y=y_right-offset_y, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
-    # fig.add_trace(go.Scatter(x=raceline_data[0]-offset_x, y=raceline_data[1]-offset_y, mode='lines',name='Ideal racing line',showlegend = False, ), row = 1, col = 2)
-
     x_left_shifted = x_left - offset_x
     y_left_shifted = y_left - offset_y
     x_right_shifted = x_right - offset_x
     y_right_shifted = y_right - offset_y
-
-    # Combine x and y coordinates into polygon points for left and right boundaries
-    right_boundary_points = np.column_stack((x_right_shifted, y_right_shifted))
-    left_boundary_points = np.column_stack((x_left_shifted, y_left_shifted))
 
     # Combine x and y coordinates into polygon points for left and right boundaries
     right_boundary_points = np.column_stack((x_right_shifted, y_right_shifted))
@@ -529,7 +515,6 @@ def create_combined_plot():
         ), row = 2, col = 2)
     max_distance = max(distances)  # Get the maximum distance value
 
-
     # Add horizontal lines for boundaries (modified)
     fig.add_shape(go.layout.Shape(
         type="line",
@@ -597,7 +582,7 @@ def create_combined_plot():
     ### Update Axes ###
 
     ## Plot 1
-    fig.update_xaxes(range=[0, 70], title_text = "Lap Number", row = 1, col = 1)
+    fig.update_xaxes(range=[-1, 70], title_text = "Lap Number", row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
 
     ## Plot 2
@@ -614,14 +599,44 @@ def create_combined_plot():
  
     return fig
 
+fig = create_combined_plot()
 
 app = Dash(__name__)
-app.layout = html.Div ([
-    html.H1("F1 Telemetry Dashboard", style={'textAlign': 'center'}),
-    dcc.Graph(
-        id='combined-plot',
-        figure=create_combined_plot()
-    )
+app.layout = html.Div([
+    dcc.Graph(id='interactive-plot', figure=fig),
+    html.Div(id='output')
 ])
 
+@app.callback(
+    Output('interactive-plot', 'figure'),
+    Input('interactive-plot', 'selectedData')
+)
+def update_graph(selected_data):
+    # If no points are selected, reset the opacity for all points
+    if not selected_data:
+        fig.update_traces(
+            row=2, col=1,
+            marker=dict(opacity=1)  # Reset to full opacity
+        )
+        return fig
+    
+    # Extract selected points data
+    selected_points = selected_data['points']
+    
+    # Extract the x-values of the selected points
+    x_selected = [point['x'] for point in selected_points]
+    
+    # Update the opacity of the traces in row=2, col=1 based on whether the x-value is selected
+    fig.update_traces(
+        row=2, col=1,
+        selectedpoints=x_selected,  # Only these x-values will be selected
+        unselected={
+            "marker": {"opacity": 0.3}  # Make unselected points transparent
+        }
+    )
+    
+    return fig
+
 app.run()
+
+# change intervals for events to boxes at varying y-levels
