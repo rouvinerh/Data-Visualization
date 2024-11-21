@@ -13,7 +13,7 @@ from dash import Dash, dcc, html, Input, Output, callback
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'VER'
+DRIVER = 'HAM'
 selected_lap_numbers = [29, 55, 32]
 
 ### Load session, race data and weather data ###
@@ -640,3 +640,4 @@ def update_graph(selected_data):
 app.run()
 
 # change intervals for events to boxes at varying y-levels
+# highlighting issues
