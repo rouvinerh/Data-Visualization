@@ -495,6 +495,8 @@ def draw_stackedbar(fig):
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1], row = 2, col = 1)
 
+    return fig
+
 '''
 Draws Plot 4, the racelines and boundaries.
 '''
@@ -614,6 +616,8 @@ def draw_racelines(fig):
     fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
     fig.update_yaxes(title_text = "Relative Position (0 = Outer Boundary, 1 = Inner Boundary)", row = 2, col = 2)
 
+    return fig
+
 '''
 **Slaps top** This bad boy creates our whole visual.
 '''
@@ -629,11 +633,11 @@ def create_visual():
         ]
     )
 
-    ## Draw Plot 1
-    fig = draw_scatterplot(fig)
-
     ## Draw Legend
     fig = draw_legend(fig)
+
+    ## Draw Plot 1
+    fig = draw_scatterplot(fig)
 
     ## Draw Plot 2
     fig = draw_racetrack(fig)
