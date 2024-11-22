@@ -193,7 +193,7 @@ def calculate_boundaries():
 Calculate and filter sector times.
 Returns sector_time_df and sector_time_long
 '''
-def sectortime_calculation():
+def sector_time_calculation():
     sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
 
     # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
@@ -260,7 +260,7 @@ Approximates the lap where rainfall changes based on the minute where it is reco
 Only considers the minutes where the race is still ongoing.
 Returns an array of laps where Rainfall has changed.
 '''
-def estimate_weather_changes():
+def estimate_weather_changes(change_indexes):
     ### Calculate total number of minutes race takes ###
     max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
     max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
@@ -270,7 +270,6 @@ def estimate_weather_changes():
     max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
 
     ### Track minutes where changes in Rainfall happens ###
-    change_indexes = [0]
     for i in range(1, total_race_time_minutes):
         if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
             change_indexes.append(i)
@@ -351,7 +350,7 @@ def draw_scatterplot(fig):
     fig.add_trace(
         go.Scatter(
             x = approximate_weather_change_laps,  
-            y = [180] * len(approximate_weather_change_laps), 
+            y = [190] * len(approximate_weather_change_laps), # plot at y level
             mode = 'text',  
             text = weather_emojis,
             textposition = 'middle center',
@@ -369,7 +368,7 @@ def draw_scatterplot(fig):
     fig.add_trace(
         go.Scatter(
             x = lap_events.index,  
-            y = [160] * len(lap_events), 
+            y = [180] * len(lap_events),  # plot at y level
             mode = 'text',  
             text = lap_event_emojis,
             textposition = 'middle center',
@@ -383,9 +382,9 @@ def draw_scatterplot(fig):
         row = 1, col= 1
     )
 
-    ### Update axes
+    ### Update Axes
     fig.update_xaxes(range=[-1, 70], title_text = "Lap Number", row = 1, col = 1)
-    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.1], row = 1, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
 
     return fig
 
@@ -676,22 +675,38 @@ def create_visual():
 
     return fig
 
+## data preprocessing (mads + max's codes)
 telemetry_100, telemetry_original = get_telemetry_and_positions()
 x_right, y_right, x_left, y_left = calculate_boundaries()
-sector_times_df, sector_times_long = sectortime_calculation()
-approximate_weather_change_laps = estimate_weather_changes()
+sector_times_df, sector_times_long = sector_time_calculation()
+
+## weather processing (rouvin)
+rainfall_index_change = [0] # laps of which the rainfall variable changes from true to false, auto set to 0 first because it is by default false
+approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
+weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
+
+## lap event processing (lukas's code)
 lap_events = process_lap_events()
 lap_event_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
-weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain.
+
+## create the figure itself
 fig = create_visual()
 
-'''Use Dash to make our graphs.'''
+'''
+Use Dash to make our graphs.
+Initialize our fig and a variable to store the selected points.
+'''
 app = Dash(__name__)
 app.layout = html.Div([
     dcc.Graph(id='interactive-plot', figure=fig),
-    dcc.Store(id='selected-points', data=[])  # Store to track selected points
+    dcc.Store(id='selected-points', data=[])  
 ])
 
+'''
+Method to update the highlighting of the graphs.
+Current limitation: Each time you select new points, it will be added to the `selected_data` variable. 
+You you cannot 'unselect' points without refreshing the page.
+'''
 @app.callback(
     [Output('interactive-plot', 'figure'),
      Output('selected-points', 'data')],
@@ -699,14 +714,12 @@ app.layout = html.Div([
     [State('selected-points', 'data')]
 )
 def update_graph(selected_data, stored_points):
-    # Keep previously selected points
     if selected_data and 'points' in selected_data:
         new_points = [p['pointIndex'] for p in selected_data['points']]
         stored_points = list(set(stored_points + new_points))  # Combine old and new
     else:
         stored_points = stored_points  # Retain previous selection if no new selection
 
-    # Create a new figure and update based on selected points
     updated_fig = go.Figure(fig)
     updated_fig.update_traces(
         selectedpoints=stored_points,  # Highlight selected points
@@ -717,5 +730,3 @@ def update_graph(selected_data, stored_points):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-# change intervals for events to boxes at varying y-levels
-# highlighting issues
