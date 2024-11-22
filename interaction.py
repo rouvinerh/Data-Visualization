@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from plotly.subplots import make_subplots
 from shapely.geometry import Point, Polygon, LineString
-from dash import Dash, dcc, html, Input, Output, callback
+from dash import Dash, dcc, html, Input, Output, State
 
 '''
 Constants that define how the code runs.
@@ -74,7 +74,7 @@ x_coords_original = []
 y_coords_original = []
 
 '''
-Load CSVs about the Hockenheim track.
+Load CSVs about the track.
 '''
 track_data_url = "https://raw.githubusercontent.com/TUMFTM/racetrack-database/master/tracks/Hockenheim.csv"
 df = pd.read_csv(track_data_url)
@@ -685,45 +685,37 @@ lap_event_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['Track
 weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain.
 fig = create_visual()
 
+'''Use Dash to make our graphs.'''
 app = Dash(__name__)
 app.layout = html.Div([
     dcc.Graph(id='interactive-plot', figure=fig),
-    html.Div(id='output')
+    dcc.Store(id='selected-points', data=[])  # Store to track selected points
 ])
 
 @app.callback(
-    Output('interactive-plot', 'figure'),
-    Input('interactive-plot', 'selectedData')
+    [Output('interactive-plot', 'figure'),
+     Output('selected-points', 'data')],
+    [Input('interactive-plot', 'selectedData')],
+    [State('selected-points', 'data')]
 )
-def update_graph(selected_data):
-    # If no points are selected, reset the opacity for all points
-    if not selected_data:
-        fig.update_traces(
-            row=2, col=1,
-            marker=dict(opacity=1)  # Reset to full opacity
-        )
-        return fig
-    
-    # Extract selected points data
-    selected_points = selected_data['points']
-    
-    # Extract the x-values of the selected points
-    x_selected = [point['x'] for point in selected_points]
-    
-    # Update the opacity of the traces in row=2, col=1 based on whether the x-value is selected
-    fig.update_traces(
-        row=2, col=1,
-        selectedpoints=x_selected,  # Only these x-values will be selected
-        unselected={
-            "marker": {"opacity": 0.3}  # Make unselected points transparent
-        }
+def update_graph(selected_data, stored_points):
+    # Keep previously selected points
+    if selected_data and 'points' in selected_data:
+        new_points = [p['pointIndex'] for p in selected_data['points']]
+        stored_points = list(set(stored_points + new_points))  # Combine old and new
+    else:
+        stored_points = stored_points  # Retain previous selection if no new selection
+
+    # Create a new figure and update based on selected points
+    updated_fig = go.Figure(fig)
+    updated_fig.update_traces(
+        selectedpoints=stored_points,  # Highlight selected points
+        marker={"opacity": 1},        # Full opacity for all points
+        unselected_marker={"opacity": 0.3}  # Dim only unselected when active
     )
-    
-    return fig
+    return updated_fig, stored_points
 
-
-app.run()
-
-
+if __name__ == '__main__':
+    app.run_server(debug=True)
 # change intervals for events to boxes at varying y-levels
 # highlighting issues
