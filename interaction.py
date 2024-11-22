@@ -680,7 +680,7 @@ telemetry_100, telemetry_original = get_telemetry_and_positions()
 x_right, y_right, x_left, y_left = calculate_boundaries()
 sector_times_df, sector_times_long = sector_time_calculation()
 
-## weather processing (rouvin)
+## weather processing (rouvin's weather code)
 rainfall_index_change = [0] # laps of which the rainfall variable changes from true to false, auto set to 0 first because it is by default false
 approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
 weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
