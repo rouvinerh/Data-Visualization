@@ -9,6 +9,14 @@ from plotly.subplots import make_subplots
 from shapely.geometry import Point, Polygon, LineString
 from dash import Dash, dcc, html, Input, Output, State
 
+# #########################################################
+# Things to do:
+# - Clean up legend (use showlegend=false)
+# - decide on colour scheme
+# - find the correct textures to use to represent the events 
+# - 
+#########################################################
+
 '''
 Constants that define how the code runs.
 Change this if you'd like to see a different course, driver or lap.
@@ -303,6 +311,7 @@ def process_lap_events():
     lap_events = lap_events.reset_index(drop=True)
     lap_events.index += 1
     lap_events = lap_events.iloc[:-1] # remove last lap
+    
     return lap_events
 
 '''
