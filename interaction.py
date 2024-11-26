@@ -12,9 +12,10 @@ from dash import Dash, dcc, html, Input, Output, State
 # #########################################################
 # Things to do:
 # - Clean up legend (use showlegend=false)
+# - continuous weather and race event icons
 # - decide on colour scheme
-# - find the correct textures to use to represent the events 
-# - 
+# - race track plotting issues
+# - fix interaction (done!)
 #########################################################
 
 '''
@@ -93,7 +94,6 @@ raceline_data = pd.read_csv(raceline_url, comment='#', header=None)
 Method to gather telemetry, and updates position and coordinate data.
 Updates positions and returns telemetry variables.
 '''
-
 def get_telemetry_and_positions():
     for lap_number in SELECTED_LAPS:
         lap_data = selected_laps[selected_laps['LapNumber'] == lap_number] # Filter data for current lap
@@ -472,6 +472,7 @@ def draw_racetrack(fig):
     fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
     fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
 
+    ## Update Axes
     fig.update_xaxes(title_text = "X Coordinate (m)", row = 1, col = 2)
     fig.update_yaxes(title_text = "Y Coordinate (m)", row = 1, col = 2)
 
@@ -500,6 +501,7 @@ def draw_stackedbar(fig):
             row = 2, col = 1
         )
 
+    ## Update Axes
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1], row = 2, col = 1)
 
@@ -621,6 +623,8 @@ def draw_racelines(fig):
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="bottom", row = 2, col = 2  # Anchor to the bottom to position it above the line
     )
+
+    ## Update Axes
     fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
     fig.update_yaxes(title_text = "Relative Position (0 = Outer Boundary, 1 = Inner Boundary)", row = 2, col = 2)
 
@@ -690,7 +694,7 @@ x_right, y_right, x_left, y_left = calculate_boundaries()
 sector_times_df, sector_times_long = sector_time_calculation()
 
 ## weather processing (rouvin's weather code)
-rainfall_index_change = [0] # laps of which the rainfall variable changes from true to false, auto set to 0 first because it is by default false
+rainfall_index_change = [0] # CHANGE ME TO THE LAP NUMBERS WHERE IT RAINS
 approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
 weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
 
@@ -708,7 +712,9 @@ Initialize our fig and a variable to store the selected points.
 app = Dash(__name__)
 app.layout = html.Div([
     dcc.Graph(id='interactive-plot', figure=fig),
-    dcc.Store(id='selected-points', data=[])  
+    dcc.Store(id='selected-points', data=[]),
+    dcc.Store(id='current-points', data=[]),  # Store for current points
+    dcc.Store(id='prev-points', data=[])      # Store for previous points
 ])
 
 '''
@@ -718,24 +724,51 @@ You you cannot 'unselect' points without refreshing the page.
 '''
 @app.callback(
     [Output('interactive-plot', 'figure'),
-     Output('selected-points', 'data')],
+     Output('selected-points', 'data'),
+     Output('current-points', 'data'),
+     Output('prev-points', 'data')],
     [Input('interactive-plot', 'selectedData')],
-    [State('selected-points', 'data')]
+    [State('selected-points', 'data'),
+     State('current-points', 'data'),
+     State('prev-points', 'data')]
 )
-def update_graph(selected_data, stored_points):
-    if selected_data and 'points' in selected_data:
-        new_points = [p['pointIndex'] for p in selected_data['points']]
-        stored_points = list(set(stored_points + new_points))  # Combine old and new
-    else:
-        stored_points = stored_points  # Retain previous selection if no new selection
+def update_graph(selected_data, stored_points, current_points, prev_points):
+    isSelected = selected_data is not None and 'points' in selected_data and len(selected_data['points']) != 0
+    updated_fig = go.Figure(fig) 
+    if isSelected: # if there is data selected
+        if len(current_points) == 0 and len(prev_points) == 0: # first selection
+            current_points = [p['pointIndex'] for p in selected_data['points']]
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3} 
+            )
 
-    updated_fig = go.Figure(fig)
-    updated_fig.update_traces(
-        selectedpoints=stored_points,  # Highlight selected points
-        marker={"opacity": 1},        # Full opacity for all points
-        unselected_marker={"opacity": 0.3}  # Dim only unselected when active
-    )
-    return updated_fig, stored_points
+        else: # any subsequent selection
+            prev_points = current_points
+            current_points = [p['pointIndex'] for p in selected_data['points']]
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  # Highlight selected points
+                unselected_marker={"opacity": 0.3}  # Dim unselected points
+            )
+    else: # nothing is selected
+        if len(current_points) > 0:  # Retain previous state
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3} 
+            )
+        else:  # Reset all points to full opacity if no points are selected
+            current_points = []
+            prev_points = []
+            isSelected = False
+            updated_fig.update_traces(
+                marker={"opacity": 1},  # Reset all points to full opacity
+                selectedpoints=None    # Clear selection highlights
+            )
+
+    return updated_fig, stored_points, current_points, prev_points
 
 if __name__ == '__main__':
     app.run_server(debug=True)
