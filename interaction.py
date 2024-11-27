@@ -741,7 +741,14 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
             updated_fig.update_traces(
                 selectedpoints=current_points,
                 marker={"opacity": 1},  
-                unselected_marker={"opacity": 0.3} 
+                unselected_marker={"opacity": 0.3}, 
+                row = 1, col = 1
+            )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 2, col = 1
             )
 
         else: # any subsequent selection
@@ -749,15 +756,29 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
             current_points = [p['pointIndex'] for p in selected_data['points']]
             updated_fig.update_traces(
                 selectedpoints=current_points,
-                marker={"opacity": 1},  # Highlight selected points
-                unselected_marker={"opacity": 0.3}  # Dim unselected points
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 1, col = 1
+            )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 2, col = 1
             )
     else: # nothing is selected
         if len(current_points) > 0:  # Retain previous state
             updated_fig.update_traces(
                 selectedpoints=current_points,
                 marker={"opacity": 1},  
-                unselected_marker={"opacity": 0.3} 
+                unselected_marker={"opacity": 0.3}, 
+                row = 1, col = 1
+            )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 2, col = 1
             )
         else:  # Reset all points to full opacity if no points are selected
             current_points = []
@@ -765,7 +786,13 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
             isSelected = False
             updated_fig.update_traces(
                 marker={"opacity": 1},  # Reset all points to full opacity
-                selectedpoints=None    # Clear selection highlights
+                selectedpoints=None,
+                row = 1, col = 1 # Clear selection highlights
+            )
+            updated_fig.update_traces(
+                marker={"opacity": 1},  # Reset all points to full opacity
+                selectedpoints=None,
+                row = 2, col = 1 # Clear selection highlights
             )
 
     return updated_fig, stored_points, current_points, prev_points
