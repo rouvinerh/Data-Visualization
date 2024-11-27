@@ -25,7 +25,7 @@ Change this if you'd like to see a different course, driver or lap.
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'HAM'
+DRIVER = 'VER'
 SELECTED_LAPS = [29, 55, 32]
 
 '''
@@ -43,11 +43,11 @@ EVENT_HIERARCHY = {
 
 ### Colours used for each compound type ###
 TIRE_COLOUR = {
-    'soft': '#377eb8',        
-    'medium': '#ff7f00',      
-    'hard': '#4daf4a',        
-    'intermediate': '#f781bf',
-    'wet': '#a65628'          
+    'soft': '#F23838',        
+    'medium': '#F2CB05',      
+    'hard': '#FFFFFF',        
+    'intermediate': '#5BA004',
+    'wet': '#171695'          
 }
 
 ### Shapes used for each compound type ###
@@ -306,7 +306,7 @@ Classifies them accordingly based on EVENT_HIERARCHY.
 Returns the lap_events
 '''
 def process_lap_events():
-    lap_events = laps[(laps['Driver'] == 'VER')]
+    lap_events = laps[(laps['Driver'] == DRIVER)]
     lap_events['TrackStatusHierarchy'] = lap_events['TrackStatus'].apply(lambda status: EVENT_HIERARCHY.get(int(str(status)[0]), float('inf')))
     lap_events = lap_events.reset_index(drop=True)
     lap_events.index += 1
