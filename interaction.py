@@ -27,7 +27,7 @@ YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'MAG'
-SELECTED_LAPS = [4,16,50, 55]
+SELECTED_LAPS = [4,33,38, 55]
 
 '''
 Constants that change the event hierarchy or visuals used in the charts.
