@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from plotly.subplots import make_subplots
 from shapely.geometry import Point, Polygon, LineString
+from shapely.ops import nearest_points
 from dash import Dash, dcc, html, Input, Output, State
 
 # #########################################################
@@ -25,8 +26,8 @@ Change this if you'd like to see a different course, driver or lap.
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'VER'
-SELECTED_LAPS = [29, 55, 32]
+DRIVER = 'MAG'
+SELECTED_LAPS = [4,16,50, 55]
 
 '''
 Constants that change the event hierarchy or visuals used in the charts.
@@ -389,6 +390,13 @@ Draw Plot 1, the scatterplot of Lap Time and Events.
 '''
 def draw_scatterplot(fig):
     lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
+
+    # Normalize LapTime values to the range [0, 1]
+    lap_times = lap_time_data['LapTime']
+    normalized_lap_times = (lap_times - lap_times.min()) / (lap_times.max() - lap_times.min())
+
+    # Map normalized values to the opacity range [0.7, 1.0]
+    opacity_values = 1.0 - (0.3 * normalized_lap_times)  # 0.3 is the range between 1.0 and 0.7
     fig.add_trace(go.Scatter(
         x = lap_time_data['LapNumber'],
         y = lap_time_data['LapTime'],
@@ -397,7 +405,8 @@ def draw_scatterplot(fig):
         marker = dict(
             size = 8,
             color = lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
-            symbol = lap_time_data['Compound'].map(lambda  x: TIRE_SHAPE.get(x.lower(), 'cross'))
+            symbol = lap_time_data['Compound'].map(lambda  x: TIRE_SHAPE.get(x.lower(), 'cross')),
+            opacity=opacity_values  # Apply calculated opacity
         ),
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}<br>Weather Condition:%{hovertext}',
         text = lap_time_data['Compound'],
@@ -444,7 +453,7 @@ def draw_scatterplot(fig):
 
     ### Update Axes
     fig.update_xaxes(range=[-1, 70], title_text = "Lap Number", row = 1, col = 1)
-    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
 
     return fig
 
@@ -452,6 +461,8 @@ def draw_scatterplot(fig):
 Draws Plot 2, the racetrack.
 '''
 def draw_racetrack(fig):
+    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
+
     offset_x = 71
     offset_y = 198
 
@@ -463,10 +474,6 @@ def draw_racetrack(fig):
     # Combine x and y coordinates into polygon points for left and right boundaries
     right_boundary_points = np.column_stack((x_right_shifted, y_right_shifted))
     left_boundary_points = np.column_stack((x_left_shifted, y_left_shifted))
-
-    # Create Path objects representing the right and left boundary polygons
-    right_boundary_path = Path(right_boundary_points)
-    left_boundary_path = Path(left_boundary_points)
 
     inner_boundary = Polygon(zip(x_left_shifted, y_left_shifted))
     outer_boundary = Polygon(zip(x_right_shifted, y_right_shifted))
@@ -480,48 +487,71 @@ def draw_racetrack(fig):
         position_data_100[i] = position_data_100[i][mask_100]
         position_data_orig[i] = position_data_orig[i][mask_orig]
 
+
+    # Define different marker styles
+    marker_styles = ['circle', 'x', 'square', 'diamond', 'cross', 'triangle-up', 'triangle-down']
+
+    # Loop through each selected lap
     for i, lap_number in enumerate(SELECTED_LAPS):
+        # Access the compound for the specific lap and map it to the color
+        compound_on_lap = lap_time_data['Compound'].values[lap_number]  # Get the compound name (e.g., 'soft')
+        color_for_lap = TIRE_COLOUR.get(compound_on_lap.lower(), 'black')  # Map to color
+        
+        # Line trace
         fig.add_trace(go.Scatter(
             x=position_data_100[i]['X'],
             y=position_data_100[i]['Y'],
             mode='lines',
-            name=f'Data f=100 Lap {lap_number}'
-        ), row = 1, col = 2)
+            line=dict(color=color_for_lap),
+            name=f'Lap {lap_number}',
+            customdata=position_data_100[i]['Distance'],
+            hovertemplate='Distance: %{customdata:.0f}'
+        ), row=1, col=2)
+        
+        # Marker trace with different marker styles
         fig.add_trace(go.Scatter(
             x=position_data_orig[i]['X'],
             y=position_data_orig[i]['Y'],
             mode='markers',
-            name=f'Original Data Lap {lap_number}'
-        ), row = 1, col = 2)
+            marker=dict(
+                symbol=marker_styles[i % len(marker_styles)],  # Cycle through marker styles
+                color=color_for_lap,
+                size=5  # Optional: Adjust marker size
+            ),
+            name=f'Original Data Lap {lap_number}',
+            customdata=position_data_orig[i]['Distance'],
+            hoverinfo='skip',
+            showlegend=False
+        ), row=1, col=2)
 
-    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', name='Right Boundary'), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines', name='Left Boundary'), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=raceline_data[0] - offset_x, y=raceline_data[1] - offset_y, mode='lines', name='Ideal racing line'), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
+    #fig.add_trace(go.Scatter(x=raceline_data[0] - offset_x, y=raceline_data[1] - offset_y, mode='lines', name='Ideal racing line'), row = 1, col = 2)
 
     # Arrays to store valid points
-    valid_x_original = []
-    valid_y_original = []
+    #valid_x_original = []
+    #valid_y_original = []
 
     # Iterate over each point in x_coords_original and y_coords_original
-    for x, y in zip(x_coords_original, y_coords_original):
-        point = (x, y)
+    #for x, y in zip(x_coords_original, y_coords_original):
+    #    point = (x, y)
 
         # Check if the point is inside the right boundary polygon
-        if left_boundary_path.contains_point(point):
+    #    if left_boundary_path.contains_point(point):
             # Check if the point is outside the left boundary polygon
-            if not right_boundary_path.contains_point(point):
-                # If it's inside the right boundary and outside the left boundary, it's valid
-                valid_x_original.append(x)
-                valid_y_original.append(y)
+    #        if not right_boundary_path.contains_point(point):
+    #            # If it's inside the right boundary and outside the left boundary, it's valid
+    #            valid_x_original.append(x)
+    #            valid_y_original.append(y)
 
-    valid_x = valid_x_original
-    valid_y = valid_y_original
+    #valid_x = valid_x_original
+    #valid_y = valid_y_original
 
     # Customize layout
-    fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=valid_x, y=valid_y, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
+    #fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
+    #fig.add_trace(go.Scatter(x=valid_x, y=valid_y, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
+    #fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
+    #fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
 
     ## Update Axes
     fig.update_xaxes(title_text = "X Coordinate (m)", row = 1, col = 2)
@@ -570,8 +600,15 @@ def draw_racelines(fig):
     x_right_shifted = x_right - offset_x
     y_right_shifted = y_right - offset_y
 
+    # Create LineString objects for left and right boundaries
+    left_boundary = LineString(zip(x_left_shifted, y_left_shifted))
+    right_boundary = LineString(zip(x_right_shifted, y_right_shifted))
+    distance_along_tangent = 50  # Distance to extend tangents, adjust as needed
+    relative_positions_all_laps = []
+
     for i, lap_number in enumerate(SELECTED_LAPS):
-    # Get valid x and y coordinates for the current lap
+        previous_relative_position = None
+        relative_positions = []
         valid_x = position_data_100[i]['X'].values
         valid_y = position_data_100[i]['Y'].values
 
@@ -580,61 +617,98 @@ def draw_racelines(fig):
         dy_race = np.diff(valid_y)
 
         # Calculate magnitude of tangent vectors
-        tangent_norm_race = np.sqrt(dx_race**2 + dy_race**2)
+        norm_race_mag = np.sqrt(dx_race**2 + dy_race**2)
 
-        # Normalize tangent vectors to get unit vectors
-        tangent_x_race = dx_race / tangent_norm_race
-        tangent_y_race = dy_race / tangent_norm_race
+        # Replace zeros with a small value to avoid nan in tangent_x/y_race bc dividing by 0
+        norm_race_mag[norm_race_mag == 0] = 1e-10
 
-        # Calculate normal vectors (perpendicular to tangent)
-        normal_x_race = -tangent_y_race
-        normal_y_race = tangent_x_race
+        # Normalize vectors to get unit vectors
+        norm_race_x = dx_race / norm_race_mag
+        norm_race_y = dy_race / norm_race_mag
 
-        # Calculate angle changes
-        dx_race = np.diff(normal_x_race)
-        dy_race = np.diff(normal_y_race)
-        change = np.sqrt(dx_race**2 + dy_race**2)
+        # Calculate the normal vectors (perpendicular to tangent)
+        tangent_x_race = -norm_race_y
+        tangent_y_race = norm_race_x
 
-        # Get distance values for the current lap
-        distances = position_data_100[i]['Distance'].values
-
-    left_boundary = LineString(zip(x_left_shifted, y_left_shifted))
-    right_boundary = LineString(zip(x_right_shifted, y_right_shifted))
-
-    relative_positions_all_laps = []
-
-    for i, lap_number in enumerate(SELECTED_LAPS):
-
-        relative_positions = []
-        for x, y in zip(position_data_100[i]['X'].values, position_data_100[i]['Y'].values):
+        for j, (x, y) in enumerate(zip(valid_x[:-1], valid_y[:-1])):
             point = Point(x, y)
+            #print(j)
+            # Access tangent vector components
+            current_tangent_x_race = tangent_x_race[j]
+            current_tangent_y_race = tangent_y_race[j]
 
-            # Calculate distances to boundaries
-            distance_to_inner = point.distance(left_boundary)
-            distance_to_outer = point.distance(right_boundary)
+            if(current_tangent_y_race == 0 and current_tangent_x_race == 0):
+                relative_positions.append(previous_relative_position)
+                continue
+            #Make a line that follows the tangent vector
+            tangent_line = LineString([Point(x - current_tangent_x_race * distance_along_tangent, y - current_tangent_y_race * distance_along_tangent),
+                                    Point(x + current_tangent_x_race * distance_along_tangent, y + current_tangent_y_race * distance_along_tangent)])
+
+            # Find intersection points with boundaries
+            intersection_inner = tangent_line.intersection(left_boundary)
+            intersection_outer = tangent_line.intersection(right_boundary)
+
+            # Make sure that we take the first point if it is multipoint
+            if intersection_inner.geom_type != 'Point':
+                if intersection_inner.is_empty:  # no intersection
+                    relative_positions.append(previous_relative_position)
+                    continue
+                else:
+                    # Find nearest point in MultiPoint to original point
+                    nearest_point = nearest_points(Point(x, y), intersection_inner)[1]
+                    intersection_inner = nearest_point  # Assign the nearest point
+
+            if intersection_outer.geom_type != 'Point':
+                if intersection_outer.is_empty:  # no intersection
+                    relative_positions.append(previous_relative_position)
+                    continue
+                else:
+                    # Find nearest point in MultiPoint to original point
+                    nearest_point = nearest_points(Point(x, y), intersection_outer)[1]
+                    intersection_outer = nearest_point  # Assign the nearest point
+
+
+            inner_x, inner_y = intersection_inner.x, intersection_inner.y
+            outer_x, outer_y = intersection_outer.x, intersection_outer.y
+
+            # Calculate distances to intersection points
+            distance_to_inner = point.distance(intersection_inner)
+            distance_to_outer = point.distance(intersection_outer)
 
             # Calculate relative position
             total_width = distance_to_inner + distance_to_outer
-            relative_position = distance_to_inner / total_width
-
+            relative_position = distance_to_outer / total_width
             relative_positions.append(relative_position)
+            previous_relative_position = relative_position
 
         relative_positions_all_laps.append(relative_positions)
+
+    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
+
     for i, lap_number in enumerate(SELECTED_LAPS):
         # Access distances for the current lap
         distances = position_data_100[i]['Distance'].values
-
+        compound_on_lap = lap_time_data['Compound'].values[lap_number]  # Get the compound name (e.g., 'soft')
+        color_for_lap = TIRE_COLOUR.get(compound_on_lap.lower(), 'black')  # Map to color 
         # Access relative_positions for the current lap
         # (Assuming you have a list of relative_positions for each lap)
         # Example: relative_positions_all_laps = [relative_positions_lap1, relative_positions_lap2, ...]
         relative_positions = relative_positions_all_laps[i]
+        #Check if relative_positions and distances have the same length
+        min_len = min(len(relative_positions), len(distances))
+        relative_positions = relative_positions[:min_len]
+        distances = distances[:min_len]
 
         fig.add_trace(go.Scatter(
             x=distances,
             y=relative_positions,
             mode='lines',
-            name=f'Lap {lap_number}'
+            line=dict(color=color_for_lap),
+            name=f'Lap {lap_number}',
+            hovertemplate=('Rel. Position: %{y:.1f}<br>'  # Display relative position
+        )
         ), row = 2, col = 2)
+
     max_distance = max(distances)  # Get the maximum distance value
 
     # Add horizontal lines for boundaries (modified)
@@ -657,27 +731,28 @@ def draw_racelines(fig):
 
     # Add annotations for boundary labels (modified)
     fig.add_annotation(
-        x=max_distance * 0.15, # Adjust the position to be inside the plot
+        x=max_distance * 0.16, # Adjust the position to be inside the plot
         y=0.05,  # Position slightly below the line (adjust as needed)
-        text="Right Boundary",
+        text="Outer Boundary",
         showarrow=False,
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
-        yanchor="top", row = 2, col = 2   # Anchor to the top to position it below the line
-    )
+        yanchor="top",
+        row = 2, col = 2   # Anchor to the top to position it below the line
+        )
     fig.add_annotation(
-        x=max_distance * 0.13, # Adjust the position to be inside the plot
+        x=max_distance * 0.16, # Adjust the position to be inside the plot
         y=0.95,  # Position slightly above the line (adjust as needed)
-        text="Left Boundary",
+        text="Inner Boundary",
         showarrow=False,
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
-        yanchor="bottom", row = 2, col = 2  # Anchor to the bottom to position it above the line
-    )
+        yanchor="bottom",# Anchor to the bottom to position it above the line
+        row = 2, col = 2)
 
     ## Update Axes
     fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
-    fig.update_yaxes(title_text = "Relative Position (0 = Outer Boundary, 1 = Inner Boundary)", row = 2, col = 2)
+    fig.update_yaxes(title_text = "Relative Position On Racetrack", row = 2, col = 2)
 
     return fig
 
@@ -713,6 +788,10 @@ def create_visual():
 
     ## Update Layout
     fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        xaxis=dict(showgrid=True, gridcolor='lightgray'),
+        yaxis=dict(showgrid=True, gridcolor='lightgray'),
         barmode='stack',
         updatemenus=[dict(
             active=0,
