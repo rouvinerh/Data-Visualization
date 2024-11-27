@@ -73,7 +73,7 @@ Load session, laps, race data and weather data and set position variables.
 '''
 race = ff1.get_session(YEAR, GRAND_PRIX, SESSION_TYPE)
 race.load(weather = True)
-laps = race.laps
+rawlaps = race.laps
 weather_data = race.weather_data
 driver_laps = race.laps.pick_driver(DRIVER)
 selected_laps = driver_laps.pick_laps(SELECTED_LAPS)
@@ -81,6 +81,27 @@ position_data_100 = []  # List to store position data for each lap at 100Hz
 position_data_orig = [] # List to store position data for each lap at original frequency
 x_coords_original = []
 y_coords_original = []
+
+# new weather data
+rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
+weather_data = rawdata[['Date time', 'Conditions']]
+
+##################### Merging dataframes - add weather conditions to laps
+ver_laps = rawlaps.dropna(subset=['LapStartDate'])
+
+# Convert datetime columns to proper datetime format
+ver_laps['LapStartDate'] = pd.to_datetime(ver_laps['LapStartDate'])
+weather_data['Date time'] = pd.to_datetime(weather_data['Date time'], format='%m/%d/%Y %H:%M:%S')
+
+# Sort both DataFrames by datetime to use merge_asof
+ver_laps = ver_laps.sort_values('LapStartDate')
+weather_data = weather_data.sort_values('Date time')
+
+# Perform an asof merge, looking backward for the closest weather condition
+laps = pd.merge_asof(ver_laps, weather_data, left_on='LapStartDate', right_on='Date time', direction='backward')
+
+# Drop the redundant 'Date time' column
+laps = laps.drop(columns=['Date time'])
 
 '''
 Load CSVs about the track.
@@ -202,7 +223,7 @@ Calculate and filter sector times.
 Returns sector_time_df and sector_time_long
 '''
 def sector_time_calculation():
-    sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].copy()
+    sector_times_df = laps[['Driver', 'LapNumber', 'Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound', 'Conditions']].copy()
 
     # Update Sector1Time for LapNumber == 1 using LapTime - Sector2Time - Sector3Time
     condition = sector_times_df['LapNumber'] == 1
@@ -244,7 +265,7 @@ def sector_time_calculation():
 
     # Find rows with missing data (NaN values)
     nat_rows = sector_times_df[
-        sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound']].isna().any(axis = 1)
+        sector_times_df[['Sector1Time', 'Sector2Time', 'Sector3Time', 'LapTime', 'Compound', 'Conditions']].isna().any(axis = 1)
     ]
 
     sector_times_df['Sector1Time'] = pd.to_timedelta(sector_times_df['Sector1Time'])
@@ -268,37 +289,66 @@ Approximates the lap where rainfall changes based on the minute where it is reco
 Only considers the minutes where the race is still ongoing.
 Returns an array of laps where Rainfall has changed.
 '''
-def estimate_weather_changes(change_indexes):
+# def estimate_weather_changes(change_indexes):
     ### Calculate total number of minutes race takes ###
-    max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
-    max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
-    total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
-    total_race_time_minutes = math.ceil(total_race_time_seconds / 60)
-    max_laps_driver_laps = max_laps_driver_laps.copy()  
-    max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
+#    max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
+#    max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
+#    total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
+#    total_race_time_minutes = math.ceil(total_race_time_seconds / 60)
+#    max_laps_driver_laps = max_laps_driver_laps.copy()  
+#    max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
 
     ### Track minutes where changes in Rainfall happens ###
-    for i in range(1, total_race_time_minutes):
-        if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
-            change_indexes.append(i)
+#    for i in range(1, total_race_time_minutes):
+#        if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
+#            change_indexes.append(i)
 
     ### Approximate the minute to the closest lap where Rainfall changed ###
-    approximate_laps = []
-    for minute in change_indexes:
-        target_time_seconds = minute * 60 
-        lap_data = max_laps_driver_laps[max_laps_driver_laps['CumulativeLapTime'] >= target_time_seconds].iloc[0]
-        lap_number = lap_data['LapNumber']
-        if lap_number > 1:
-            previous_lap_time = max_laps_driver_laps[max_laps_driver_laps['LapNumber'] == lap_number - 1]['CumulativeLapTime'].values[0]
-        else:
-            previous_lap_time = 0 
+#    approximate_laps = []
+#   for minute in change_indexes:
+#        target_time_seconds = minute * 60 
+#       lap_data = max_laps_driver_laps[max_laps_driver_laps['CumulativeLapTime'] >= target_time_seconds].iloc[0]
+#        lap_number = lap_data['LapNumber']
+#        if lap_number > 1:
+#            previous_lap_time = max_laps_driver_laps[max_laps_driver_laps['LapNumber'] == lap_number - 1]['CumulativeLapTime'].values[0]
+#        else:
+#            previous_lap_time = 0 
         
-        lap_fraction = (target_time_seconds - previous_lap_time) / (lap_data['CumulativeLapTime'] - previous_lap_time)
-        exact_lap = lap_number - 1 + lap_fraction
+#        lap_fraction = (target_time_seconds - previous_lap_time) / (lap_data['CumulativeLapTime'] - previous_lap_time)
+#        exact_lap = lap_number - 1 + lap_fraction
         
-        approximate_laps.append(round(exact_lap, 1))
+#        approximate_laps.append(round(exact_lap, 1))
 
-    return approximate_laps
+#    return approximate_laps
+
+change_laps = []
+previous_condition = None  # To keep track of the previous condition
+
+# Identify the laps where the weather changes
+for i, row in laps.iterrows():
+    current_condition = row['Conditions']
+    
+    # If weather condition changes (or it's the first row), track the lap number
+    if previous_condition is None or current_condition != previous_condition:
+        change_laps.append(row['LapNumber'])
+    
+    # Update the previous condition for the next iteration
+    previous_condition = current_condition
+
+def get_weather_emoji(condition):
+    if condition == 'Rain':
+        return '🌧️'
+    elif condition == 'Partially cloudy':
+        return '⛅'
+    elif condition == 'Clear':
+        return '☀️'
+    elif condition == 'Overcast':
+        return '☁️'
+    else:
+        return '❓'
+
+# Use the get_weather_emoji function to generate emojis for the laps where weather changes
+weather_emojis = [get_weather_emoji(laps.loc[laps['LapNumber'] == lap, 'Conditions'].values[0]) for lap in change_laps]
 
 '''
 Process events that happened per lap in the race.
@@ -349,8 +399,9 @@ def draw_scatterplot(fig):
             color = lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
             symbol = lap_time_data['Compound'].map(lambda  x: TIRE_SHAPE.get(x.lower(), 'cross'))
         ),
-        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}',
+        hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}<br>Weather Condition:%{hovertext}',
         text = lap_time_data['Compound'],
+        hovertext = lap_time_data['Conditions'],
         showlegend = False
     ), row = 1, col = 1)
 
@@ -358,8 +409,8 @@ def draw_scatterplot(fig):
     ## Rain
     fig.add_trace(
         go.Scatter(
-            x = approximate_weather_change_laps,  
-            y = [190] * len(approximate_weather_change_laps), # plot at y level
+            x = change_laps,# approximate_weather_change_laps,  
+            y = [190] * len(change_laps), # approximate_weather_change_laps),  plot at y level
             mode = 'text',  
             text = weather_emojis,
             textposition = 'middle center',
@@ -694,9 +745,28 @@ x_right, y_right, x_left, y_left = calculate_boundaries()
 sector_times_df, sector_times_long = sector_time_calculation()
 
 ## weather processing (rouvin's weather code)
-rainfall_index_change = [0] # CHANGE ME TO THE LAP NUMBERS WHERE IT RAINS
-approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
-weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
+
+# rainfall_index_change = [0] # CHANGE ME TO THE LAP NUMBERS WHERE IT RAINS
+# approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
+# weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
+
+## weather processing part 2 (Lukas' new weather code)
+# Conditions in data: 'Rain' 'Partially cloudy' 'Clear' 'Overcast'
+# Map the weather conditions to emojis
+# def get_weather_emoji(condition):
+#   if condition == 'Rain':
+#        return '🌧️'
+#    elif condition == 'Partially cloudy':
+#        return '⛅'
+#    elif condition == 'Clear':
+#        return '☀️'
+#    elif condition == 'Overcast':
+#        return '☁️'
+#    else:
+#        return '❓'
+
+# Create a list of emojis based on the 'Conditions' column
+# weather_emojis = [get_weather_emoji(cond) for cond in laps['Conditions']]
 
 ## lap event processing (lukas's code)
 lap_events = process_lap_events()
