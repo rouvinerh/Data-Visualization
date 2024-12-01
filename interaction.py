@@ -474,7 +474,7 @@ def draw_racetrack(fig):
     return fig
 
 '''
-Draws Plot 3, the stacked bar chart.
+Draws Plot 5, the stacked bar chart.
 '''
 def draw_stackedbar(fig):
     driver_data = sector_times_long[(sector_times_long['Driver'] == DRIVER) & (sector_times_long['LapNumber'] != 65)]
@@ -492,12 +492,12 @@ def draw_stackedbar(fig):
                     line=dict(color='black', width=1)
                 ),
             ),
-            row = 2, col = 1
+            row = 3, col = 1
         )
 
     ## Update Axes
-    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
-    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1], row = 2, col = 1)
+    fig.update_xaxes(title_text = "Lap Number", row = 3, col = 1)
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [0, sector_times_df['LapTime'].max() * 1], row = 3, col = 1)
 
     return fig
 
@@ -679,7 +679,7 @@ def draw_events_and_weather(fig):
             hovertext=event_hover_text,
             hoverinfo='text'
         ),
-        row=3, col=1
+        row=2, col=1
     )
 
     ## Plot 5b for Weather
@@ -696,11 +696,11 @@ def draw_events_and_weather(fig):
             hoverinfo='text',
             showlegend=False
         ),
-        row=3, col=1
+        row=2, col=1
     )
 
-    fig.update_xaxes(title_text = "Lap Number", row = 3, col = 1)
-    fig.update_yaxes(showticklabels=False, row=3, col=1)
+    fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
+    fig.update_yaxes(showticklabels=False, row=2, col=1)
 
 
     return fig
@@ -715,9 +715,9 @@ def create_visual():
         subplot_titles=[
             "Lap Times with Weather", 
             "Track Map", 
-            "Sector Times", 
+            "Lap Events and Weather", 
             "Relative Position Between Boundaries",
-            "Lap Events and Weather",
+            "Sector Times",
         ],
         vertical_spacing = 0.1,
         specs=[
@@ -737,13 +737,14 @@ def create_visual():
     fig = draw_racetrack(fig)
 
     ## Draw Plot 3
-    fig = draw_stackedbar(fig)
+    fig = draw_events_and_weather(fig)
 
     ## Draw Plot 4
     fig = draw_racelines(fig)
 
     ## Draw Plot 5
-    fig = draw_events_and_weather(fig)
+    fig = draw_stackedbar(fig)
+
 
     ## Update Layout
     fig.update_layout(
