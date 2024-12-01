@@ -366,7 +366,7 @@ def draw_legend(fig):
                 marker=dict(color=color, size=10),
                 name=f'{event_type}' 
             ),
-            row=1, col=1 
+            row=2, col=1 
         )
 
     # Add weather colors to the legend
@@ -379,7 +379,7 @@ def draw_legend(fig):
                 marker=dict(color=color, size=10),
                 name=f'{weather}' 
             ),
-            row=1, col=1  
+            row=2, col=1  
         )
     
     return fig
@@ -708,6 +708,7 @@ def draw_events_and_weather(fig):
                 color=lap_events['TrackStatusHierarchy'].map(EVENT_COLOURS),
                 line=dict(width=0)
             ),
+            showlegend = False,
             hovertext=event_hover_text,
             hoverinfo='text'
         ),
@@ -724,6 +725,7 @@ def draw_events_and_weather(fig):
                 color=weather_plot_color,
                 line=dict(width=0)
             ),
+            showlegend = False,
             hovertext=all_weather,
             hoverinfo='text',
         ),
