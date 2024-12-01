@@ -10,15 +10,6 @@ from shapely.geometry import Point, Polygon, LineString
 from shapely.ops import nearest_points
 from dash import Dash, dcc, html, Input, Output, State
 
-# #########################################################
-# Things to do:
-# - Clean up legend (use showlegend=false)
-# - continuous weather and race event icons
-# - decide on colour scheme
-# - race track plotting issues
-# - fix interaction (done!)
-#########################################################
-
 '''
 Constants that define how the code runs.
 Change this if you'd like to see a different course, driver or lap.
@@ -26,7 +17,7 @@ Change this if you'd like to see a different course, driver or lap.
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'MAG'
+DRIVER = 'VER'
 SELECTED_LAPS = [4,33,38, 55]
 
 '''
@@ -60,13 +51,29 @@ TIRE_SHAPE = {
     'wet': 'x'
 }
 
-### Lap event emojis ###
-EVENT_EMOJIS = {
-    1: '',           # All Clear (no emoji)
-    2: '⚠️',         # Yellow Flag
-    3: '🚗',         # Virtual Safety Car
-    4: '🚓',         # Safety Car
-    5: '🚩'          # Red Flag
+### Define Event Colours
+EVENT_COLOURS = {
+    1: '#4CAF50', # clear
+    2: '#FFC107', # yellow flag
+    3: '#607D8B', # VSC
+    4: '#a4d5ed', # safety car
+    5: 'FF3B30'   # red flag
+}
+
+EVENT_DESC = {
+    1: 'No Events', # clear
+    2: 'Yellow Flag', # yellow flag
+    3: 'Virtual Safety  Car', # VSC
+    4: 'Safety Car', # safety car
+    5: 'Red Flag'   # red flag
+}
+
+### Define Weather Colours
+WEATHER_COLOURS = {
+    'Rain': '#1f77b4', # Dark blue
+    'Partially cloudy': '#d3d3d3', # Light grey
+    'Overcast': '#808080', # Grey
+    'Clear': '#ffa500' # Orange
 }
 
 '''
@@ -84,7 +91,7 @@ x_coords_original = []
 y_coords_original = []
 
 # new weather data
-rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
+rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')  # Adjust the path if necessary
 weather_data = rawdata[['Date time', 'Conditions']]
 
 ##################### Merging dataframes - add weather conditions to laps
@@ -154,27 +161,6 @@ def get_telemetry_and_positions():
         # Extract the x and y coordinates
         x_coords_original = telemetry_original['X']/10 # Adjust from 1/10m -> 1m scale
         y_coords_original = telemetry_original['Y']/10 # Adjust from 1/10m -> 1m scale
-
-        # Combine them into a DataFrame
-        position_data = pd.DataFrame({
-            'X': x_coords,
-            'Y': y_coords,
-            'Time': telemetry_original['Date']  # Add timestamps to check the data frequency
-        })
-
-        # Combine them into a DataFrame
-        position_data_original = pd.DataFrame({
-            'X': x_coords_original,
-            'Y': y_coords_original,
-            'Time': telemetry_original['Date']  # Add timestamps to check the data frequency
-        })
-
-        ## unused code
-        # # Calculate the time difference between consecutive telemetry points
-        # time_diff = position_data['Time'].diff().dt.total_seconds()
-
-        # # Calculate the time difference between consecutive telemetry points
-        # time_diff_original = position_data_original['Time'].diff().dt.total_seconds()
 
         return telemetry_100, telemetry_original
 
@@ -285,50 +271,13 @@ def sector_time_calculation():
                                             var_name = 'Sector', value_name = 'Time')
     return sector_times_df, sector_times_long
 
-'''
-Approximates the lap where rainfall changes based on the minute where it is recorded. 
-Only considers the minutes where the race is still ongoing.
-Returns an array of laps where Rainfall has changed.
-'''
-# def estimate_weather_changes(change_indexes):
-    ### Calculate total number of minutes race takes ###
-#    max_laps_driver = laps.groupby('Driver')['LapNumber'].max().idxmax()
-#    max_laps_driver_laps = laps[laps['Driver'] == max_laps_driver]
-#    total_race_time_seconds = max_laps_driver_laps['LapTime'].fillna(pd.Timedelta(0)).sum().total_seconds()
-#    total_race_time_minutes = math.ceil(total_race_time_seconds / 60)
-#    max_laps_driver_laps = max_laps_driver_laps.copy()  
-#    max_laps_driver_laps['CumulativeLapTime'] = max_laps_driver_laps['LapTime'].cumsum().dt.total_seconds()
-
-    ### Track minutes where changes in Rainfall happens ###
-#    for i in range(1, total_race_time_minutes):
-#        if weather_data['Rainfall'][i] != weather_data['Rainfall'][i - 1]:
-#            change_indexes.append(i)
-
-    ### Approximate the minute to the closest lap where Rainfall changed ###
-#    approximate_laps = []
-#   for minute in change_indexes:
-#        target_time_seconds = minute * 60 
-#       lap_data = max_laps_driver_laps[max_laps_driver_laps['CumulativeLapTime'] >= target_time_seconds].iloc[0]
-#        lap_number = lap_data['LapNumber']
-#        if lap_number > 1:
-#            previous_lap_time = max_laps_driver_laps[max_laps_driver_laps['LapNumber'] == lap_number - 1]['CumulativeLapTime'].values[0]
-#        else:
-#            previous_lap_time = 0 
-        
-#        lap_fraction = (target_time_seconds - previous_lap_time) / (lap_data['CumulativeLapTime'] - previous_lap_time)
-#        exact_lap = lap_number - 1 + lap_fraction
-        
-#        approximate_laps.append(round(exact_lap, 1))
-
-#    return approximate_laps
-
+all_weather = []
 change_laps = []
 previous_condition = None  # To keep track of the previous condition
 
 # Identify the laps where the weather changes
 for i, row in laps.iterrows():
     current_condition = row['Conditions']
-    
     # If weather condition changes (or it's the first row), track the lap number
     if previous_condition is None or current_condition != previous_condition:
         change_laps.append(row['LapNumber'])
@@ -348,8 +297,25 @@ def get_weather_emoji(condition):
     else:
         return '❓'
 
+change_laps.pop(3) # remove dupe lap 7.0 for some reason
 # Use the get_weather_emoji function to generate emojis for the laps where weather changes
-weather_emojis = [get_weather_emoji(laps.loc[laps['LapNumber'] == lap, 'Conditions'].values[0]) for lap in change_laps]
+# weather emojis for the scatterplot, only in laps where it changes
+change_weather_emojis = [get_weather_emoji(laps.loc[laps['LapNumber'] == lap, 'Conditions'].values[0]) for lap in change_laps]
+
+all_weather = []
+current_weather = None
+change_idx = 0
+# Loop through all laps (assuming lap numbers range from 1      to 64)
+for lap in range(1, 65):  # Assuming laps range from 1 to 64
+    # Check if the lap number matches a weather change
+    if change_idx < len(change_laps) and lap == change_laps[change_idx]:
+        current_weather = laps.loc[laps['LapNumber'] == lap, 'Conditions'].values[0]
+        change_idx += 1
+    all_weather.append(current_weather)
+
+all_weather_color = pd.Series(all_weather)
+weather_plot_color = all_weather_color.map(WEATHER_COLOURS)
+weather_colours_plot = [WEATHER_COLOURS[emoji] for emoji in change_weather_emojis if emoji in WEATHER_COLOURS]
 
 '''
 Process events that happened per lap in the race.
@@ -389,8 +355,6 @@ def draw_legend(fig):
 Draw Plot 1, the scatterplot of Lap Time and Events.
 '''
 def draw_scatterplot(fig):
-    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
-
     # Normalize LapTime values to the range [0, 1]
     lap_times = lap_time_data['LapTime']
     normalized_lap_times = (lap_times - lap_times.min()) / (lap_times.max() - lap_times.min())
@@ -410,7 +374,7 @@ def draw_scatterplot(fig):
         ),
         hovertemplate = 'Lap: %{x}<br>Lap Time: %{y:.2f} seconds<br>Tire Compound: %{text}<br>Weather Condition:%{hovertext}',
         text = lap_time_data['Compound'],
-        hovertext = lap_time_data['Conditions'],
+        hovertext = all_weather_color,
         showlegend = False
     ), row = 1, col = 1)
 
@@ -421,7 +385,7 @@ def draw_scatterplot(fig):
             x = change_laps,# approximate_weather_change_laps,  
             y = [190] * len(change_laps), # approximate_weather_change_laps),  plot at y level
             mode = 'text',  
-            text = weather_emojis,
+            text = change_weather_emojis,
             textposition = 'middle center',
             name = 'Rainfall Change Points',
             showlegend = False,
@@ -433,26 +397,8 @@ def draw_scatterplot(fig):
         row = 1, col= 1
     )
 
-    ### Events
-    fig.add_trace(
-        go.Scatter(
-            x = lap_events.index,  
-            y = [180] * len(lap_events),  # plot at y level
-            mode = 'text',  
-            text = lap_event_emojis,
-            textposition = 'middle center',
-            name = 'Lap Events',
-            showlegend = False,
-            hoverinfo='none',
-            textfont=dict(
-                size=25 
-            )
-        ),
-        row = 1, col= 1
-    )
-
     ### Update Axes
-    fig.update_xaxes(range=[-1, 70], title_text = "Lap Number", row = 1, col = 1)
+    fig.update_xaxes(range=[1, 64], title_text = "Lap Number", row = 1, col = 1)
     fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
 
     return fig
@@ -461,8 +407,6 @@ def draw_scatterplot(fig):
 Draws Plot 2, the racetrack.
 '''
 def draw_racetrack(fig):
-    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
-
     offset_x = 71
     offset_y = 198
 
@@ -470,10 +414,6 @@ def draw_racetrack(fig):
     y_left_shifted = y_left - offset_y
     x_right_shifted = x_right - offset_x
     y_right_shifted = y_right - offset_y
-
-    # Combine x and y coordinates into polygon points for left and right boundaries
-    right_boundary_points = np.column_stack((x_right_shifted, y_right_shifted))
-    left_boundary_points = np.column_stack((x_left_shifted, y_left_shifted))
 
     inner_boundary = Polygon(zip(x_left_shifted, y_left_shifted))
     outer_boundary = Polygon(zip(x_right_shifted, y_right_shifted))
@@ -526,32 +466,6 @@ def draw_racetrack(fig):
 
     fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
     fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
-    #fig.add_trace(go.Scatter(x=raceline_data[0] - offset_x, y=raceline_data[1] - offset_y, mode='lines', name='Ideal racing line'), row = 1, col = 2)
-
-    # Arrays to store valid points
-    #valid_x_original = []
-    #valid_y_original = []
-
-    # Iterate over each point in x_coords_original and y_coords_original
-    #for x, y in zip(x_coords_original, y_coords_original):
-    #    point = (x, y)
-
-        # Check if the point is inside the right boundary polygon
-    #    if left_boundary_path.contains_point(point):
-            # Check if the point is outside the left boundary polygon
-    #        if not right_boundary_path.contains_point(point):
-    #            # If it's inside the right boundary and outside the left boundary, it's valid
-    #            valid_x_original.append(x)
-    #            valid_y_original.append(y)
-
-    #valid_x = valid_x_original
-    #valid_y = valid_y_original
-
-    # Customize layout
-    #fig.add_trace(go.Scatter(x=valid_x_original, y=valid_y_original, mode='markers',name='original data',showlegend = False), row = 1, col = 2)
-    #fig.add_trace(go.Scatter(x=valid_x, y=valid_y, mode='lines',name=' data f=100',showlegend = False), row = 1, col = 2)
-    #fig.add_trace(go.Scatter(x=x_left_shifted, y=y_left_shifted, mode='lines',name='right boundary',showlegend = False), row = 1, col = 2)
-    #fig.add_trace(go.Scatter(x=x_right_shifted, y=y_right_shifted, mode='lines',name='left boundary',showlegend = False), row = 1, col = 2)
 
     ## Update Axes
     fig.update_xaxes(title_text = "X Coordinate (m)", row = 1, col = 2)
@@ -563,7 +477,6 @@ def draw_racetrack(fig):
 Draws Plot 3, the stacked bar chart.
 '''
 def draw_stackedbar(fig):
-    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
     driver_data = sector_times_long[(sector_times_long['Driver'] == DRIVER) & (sector_times_long['LapNumber'] != 65)]
     for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
         sector_data = driver_data[driver_data['Sector'] == sector]
@@ -667,10 +580,6 @@ def draw_racelines(fig):
                     nearest_point = nearest_points(Point(x, y), intersection_outer)[1]
                     intersection_outer = nearest_point  # Assign the nearest point
 
-
-            inner_x, inner_y = intersection_inner.x, intersection_inner.y
-            outer_x, outer_y = intersection_outer.x, intersection_outer.y
-
             # Calculate distances to intersection points
             distance_to_inner = point.distance(intersection_inner)
             distance_to_outer = point.distance(intersection_outer)
@@ -682,8 +591,6 @@ def draw_racelines(fig):
             previous_relative_position = relative_position
 
         relative_positions_all_laps.append(relative_positions)
-
-    lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
 
     for i, lap_number in enumerate(SELECTED_LAPS):
         # Access distances for the current lap
@@ -756,16 +663,65 @@ def draw_racelines(fig):
 
     return fig
 
+def draw_events_and_weather(fig):
+    ## Plot 5 for Events
+    event_hover_text = lap_events['TrackStatusHierarchy'].map(EVENT_DESC)
+    fig.add_trace(
+        go.Bar(
+            x=lap_events['LapNumber'],
+            y=[1] * len(lap_events),  
+            base=[1] * len(lap_events),  
+            marker=dict(
+                color=lap_events['TrackStatusHierarchy'].map(EVENT_COLOURS),
+                line=dict(width=0)
+            ),
+            showlegend=False,
+            hovertext=event_hover_text,
+            hoverinfo='text'
+        ),
+        row=3, col=1
+    )
+
+    ## Plot 5b for Weather
+    fig.add_trace(
+        go.Bar(
+            x=lap_events['LapNumber'],
+            y=[1] * len(lap_events),  
+            base=[0] * len(lap_events),  
+            marker=dict(
+                color=weather_plot_color,
+                line=dict(width=0)
+            ),
+            hovertext=all_weather,
+            hoverinfo='text',
+            showlegend=False
+        ),
+        row=3, col=1
+    )
+
+    fig.update_xaxes(title_text = "Lap Number", row = 3, col = 1)
+    fig.update_yaxes(showticklabels=False, row=3, col=1)
+
+
+    return fig
+
 '''
 **Slaps top** This bad boy creates our whole visual.
 '''
 def create_visual():
     ## Create 4 plots, with appropriate names.
     fig = make_subplots(
-        rows = 2, cols = 2,
-        subplot_titles=["Lap Times and Events", "Track Map", "Sector Times with Compounds", "Relative Position Between Boundaries"],
+        rows = 3, cols = 2,
+        subplot_titles=[
+            "Lap Times with Weather", 
+            "Track Map", 
+            "Sector Times", 
+            "Relative Position Between Boundaries",
+            "Lap Events and Weather",
+        ],
         vertical_spacing = 0.1,
-       specs=[
+        specs=[
+            [{'secondary_y': True}, {'secondary_y': True}],
             [{'secondary_y': True}, {'secondary_y': True}],
             [{'secondary_y': True}, {'secondary_y': True}]
         ]
@@ -785,6 +741,9 @@ def create_visual():
 
     ## Draw Plot 4
     fig = draw_racelines(fig)
+
+    ## Draw Plot 5
+    fig = draw_events_and_weather(fig)
 
     ## Update Layout
     fig.update_layout(
@@ -822,34 +781,11 @@ def create_visual():
 telemetry_100, telemetry_original = get_telemetry_and_positions()
 x_right, y_right, x_left, y_left = calculate_boundaries()
 sector_times_df, sector_times_long = sector_time_calculation()
-
-## weather processing (rouvin's weather code)
-
-# rainfall_index_change = [0] # CHANGE ME TO THE LAP NUMBERS WHERE IT RAINS
-# approximate_weather_change_laps = estimate_weather_changes(rainfall_index_change)
-# weather_emojis = ['☀️' if i % 2 == 0 else '🌧️' for i in range(len(approximate_weather_change_laps))] # alternating between sun and rain
-
-## weather processing part 2 (Lukas' new weather code)
-# Conditions in data: 'Rain' 'Partially cloudy' 'Clear' 'Overcast'
-# Map the weather conditions to emojis
-# def get_weather_emoji(condition):
-#   if condition == 'Rain':
-#        return '🌧️'
-#    elif condition == 'Partially cloudy':
-#        return '⛅'
-#    elif condition == 'Clear':
-#        return '☀️'
-#    elif condition == 'Overcast':
-#        return '☁️'
-#    else:
-#        return '❓'
-
-# Create a list of emojis based on the 'Conditions' column
-# weather_emojis = [get_weather_emoji(cond) for cond in laps['Conditions']]
+lap_time_data = sector_times_df[(sector_times_df['Driver'] == DRIVER) & (sector_times_df['LapNumber'] != 65)]
 
 ## lap event processing (lukas's code)
 lap_events = process_lap_events()
-lap_event_emojis = [EVENT_EMOJIS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
+lap_event_colours = [EVENT_COLOURS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
 
 ## create the figure itself
 fig = create_visual()
