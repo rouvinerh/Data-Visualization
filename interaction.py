@@ -99,7 +99,8 @@ x_coords_original = []
 y_coords_original = []
 
 # new weather data
-rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')  # Adjust the path if necessary
+# rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')
+rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
 weather_data = rawdata[['Date time', 'Conditions']]
 
 ##################### Merging dataframes - add weather conditions to laps
@@ -734,7 +735,6 @@ def draw_events_and_weather(fig):
 
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(showticklabels=False, row=2, col=1)
-
 
     return fig
 
