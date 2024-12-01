@@ -57,7 +57,15 @@ EVENT_COLOURS = {
     2: '#FFC107', # yellow flag
     3: '#607D8B', # VSC
     4: '#a4d5ed', # safety car
-    5: 'FF3B30'   # red flag
+    5: '#FF3B30'   # red flag
+}
+
+EVENT_LEGEND = {
+    'No Events': '#4CAF50', # clear
+    'Yellow Flag': '#FFC107', # yellow flag
+    'Virtual Safety Car': '#607D8B', # VSC
+    'Safety Car': '#a4d5ed', # safety car
+    'Red Flag': '#FF3B30'   # red flag
 }
 
 EVENT_DESC = {
@@ -348,6 +356,31 @@ def draw_legend(fig):
             ),
             row=1, col=1
     )
+    
+    for event_type, color in EVENT_LEGEND.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None],  
+                y=[None],  
+                mode='markers',
+                marker=dict(color=color, size=10),
+                name=f'{event_type}' 
+            ),
+            row=1, col=1 
+        )
+
+    # Add weather colors to the legend
+    for weather, color in WEATHER_COLOURS.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None], 
+                y=[None],  
+                mode='markers',
+                marker=dict(color=color, size=10),
+                name=f'{weather}' 
+            ),
+            row=1, col=1  
+        )
     
     return fig
 
@@ -675,7 +708,6 @@ def draw_events_and_weather(fig):
                 color=lap_events['TrackStatusHierarchy'].map(EVENT_COLOURS),
                 line=dict(width=0)
             ),
-            showlegend=False,
             hovertext=event_hover_text,
             hoverinfo='text'
         ),
@@ -694,7 +726,6 @@ def draw_events_and_weather(fig):
             ),
             hovertext=all_weather,
             hoverinfo='text',
-            showlegend=False
         ),
         row=2, col=1
     )
