@@ -787,8 +787,6 @@ def create_visual():
             label="All Sectors",
             method="update",
             args=[
-                {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]},
-                {"title": "All Sectors)"},
                 {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]}
             ],
         ),
