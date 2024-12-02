@@ -99,8 +99,8 @@ x_coords_original = []
 y_coords_original = []
 
 # new weather data
-# rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')
-rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
+rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')
+# rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
 weather_data = rawdata[['Date time', 'Conditions']]
 
 ##################### Merging dataframes - add weather conditions to laps
@@ -314,7 +314,7 @@ change_weather_emojis = [get_weather_emoji(laps.loc[laps['LapNumber'] == lap, 'C
 all_weather = []
 current_weather = None
 change_idx = 0
-# Loop through all laps (assuming lap numbers range from 1      to 64)
+
 for lap in range(1, 65):  # Assuming laps range from 1 to 64
     # Check if the lap number matches a weather change
     if change_idx < len(change_laps) and lap == change_laps[change_idx]:
@@ -488,9 +488,9 @@ def draw_racetrack(fig):
             y=position_data_orig[i]['Y'],
             mode='markers',
             marker=dict(
-                symbol=marker_styles[i % len(marker_styles)],  # Cycle through marker styles
+                symbol=marker_styles[i % len(marker_styles)],  
                 color=color_for_lap,
-                size=5  # Optional: Adjust marker size
+                size=5 
             ),
             name=f'Original Data Lap {lap_number}',
             customdata=position_data_orig[i]['Distance'],
@@ -778,6 +778,45 @@ def create_visual():
     ## Draw Plot 5
     fig = draw_stackedbar(fig)
 
+    sector1_index = 32  
+    sector2_index = 33  
+    sector3_index = 34  
+
+    sector_time_buttons = [
+        dict(
+            label="All Sectors",
+            method="update",
+            args=[
+                {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]},
+                {"title": "All Sectors)"},
+            ],
+        ),
+        dict(
+            label="Sector 1",
+            method="update",
+            args=[
+                {"visible": [i == sector1_index or i < 32 for i in range(len(fig.data))]}, 
+                {"title": "Sector 1"},
+            ],
+        ),
+        dict(
+            label="Sector 2",
+            method="update",
+            args=[
+                {"visible": [i == sector2_index or i < 32 for i in range(len(fig.data))]}, 
+                {"title": "Sector 2"},
+            ],
+        ),
+        dict(
+            label="Sector 3",
+            method="update",
+            args=[
+                {"visible": [i == sector3_index or i < 32 for i in range(len(fig.data))]},
+                {"title": "Sector 3"},
+            ],
+        ),
+    ]
+
 
     ## Update Layout
     fig.update_layout(
@@ -786,14 +825,17 @@ def create_visual():
         xaxis=dict(showgrid=True, gridcolor='lightgray'),
         yaxis=dict(showgrid=True, gridcolor='lightgray'),
         barmode='stack',
-        updatemenus=[dict(
-            active=0,
-            direction="down",
-            x=1.15,
-            xanchor="left",
-            y=1.10,
-            yanchor="top",
-        )],
+        updatemenus=[
+            dict(
+                buttons=sector_time_buttons, 
+                active=0,
+                direction="down",
+                x=1.15,
+                xanchor="left",
+                y=1.10,
+                yanchor="top",
+            )
+        ],
         hovermode="x unified",
         height=1000,
         legend=dict(
@@ -830,10 +872,11 @@ Initialize our fig and a variable to store the selected points.
 '''
 app = Dash(__name__)
 app.layout = html.Div([
+    html.H1("Visualizing F1: Tire Strategies and Racing Lines", style={'text-align': 'center'}),
     dcc.Graph(id='interactive-plot', figure=fig),
     dcc.Store(id='selected-points', data=[]),
-    dcc.Store(id='current-points', data=[]),  # Store for current points
-    dcc.Store(id='prev-points', data=[])      # Store for previous points
+    dcc.Store(id='current-points', data=[]),
+    dcc.Store(id='prev-points', data=[])     
 ])
 
 '''
@@ -869,6 +912,13 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
                 unselected_marker={"opacity": 0.3}, 
                 row = 2, col = 1
             )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 3, col = 1
+            )
+
 
         else: # any subsequent selection
             prev_points = current_points
@@ -885,6 +935,12 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
                 unselected_marker={"opacity": 0.3}, 
                 row = 2, col = 1
             )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 3, col = 1
+            )
     else: # nothing is selected
         if len(current_points) > 0:  # Retain previous state
             updated_fig.update_traces(
@@ -899,6 +955,12 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
                 unselected_marker={"opacity": 0.3}, 
                 row = 2, col = 1
             )
+            updated_fig.update_traces(
+                selectedpoints=current_points,
+                marker={"opacity": 1},  
+                unselected_marker={"opacity": 0.3}, 
+                row = 3, col = 1
+            )
         else:  # Reset all points to full opacity if no points are selected
             current_points = []
             prev_points = []
@@ -912,6 +974,11 @@ def update_graph(selected_data, stored_points, current_points, prev_points):
                 marker={"opacity": 1},  # Reset all points to full opacity
                 selectedpoints=None,
                 row = 2, col = 1 # Clear selection highlights
+            )
+            updated_fig.update_traces(
+                marker={"opacity": 1},  # Reset all points to full opacity
+                selectedpoints=None,
+                row = 3, col = 1 # Clear selection highlights
             )
 
     return updated_fig, stored_points, current_points, prev_points
