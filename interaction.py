@@ -789,30 +789,28 @@ def create_visual():
             args=[
                 {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]},
                 {"title": "All Sectors)"},
+                {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 1",
             method="update",
             args=[
-                {"visible": [i == sector1_index or i < 32 for i in range(len(fig.data))]}, 
-                {"title": "Sector 1"},
+                {"visible": [i == sector1_index or i < 32 for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 2",
             method="update",
             args=[
-                {"visible": [i == sector2_index or i < 32 for i in range(len(fig.data))]}, 
-                {"title": "Sector 2"},
+                {"visible": [i == sector2_index or i < 32 for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 3",
             method="update",
             args=[
-                {"visible": [i == sector3_index or i < 32 for i in range(len(fig.data))]},
-                {"title": "Sector 3"},
+                {"visible": [i == sector3_index or i < 32 for i in range(len(fig.data))]}
             ],
         ),
     ]
@@ -832,7 +830,7 @@ def create_visual():
                 direction="down",
                 x=1.15,
                 xanchor="left",
-                y=1.10,
+                y=0.98,
                 yanchor="top",
             )
         ],
