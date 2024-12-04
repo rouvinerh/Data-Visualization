@@ -55,16 +55,16 @@ TIRE_SHAPE = {
 ### Define Event Colours
 EVENT_COLOURS = {
     1: '#FFFFFF', # clear
-    2: '#DDCC77', # yellow flag
-    3: '#44AA99', # VSC
-    4: '#117733', # safety car
+    2: '#DECC70', # yellow flag
+    3: '#FFB4C1', # VSC
+    4: '#FF7F0E', # safety car
 }
 
 EVENT_LEGEND = {
     'No Events': '#FFFFFF', # clear
-    'Yellow Flag': '#DDCC77', # yellow flag
-    'Virtual Safety Car': '#44AA99', # VSC
-    'Safety Car': '#117733', # safety car
+    'Yellow Flag': '#DECC70', # yellow flag
+    'Virtual Safety Car': '#FFB4C1', # VSC
+    'Safety Car': '#FF7F0E', # safety car
 }
 
 EVENT_DESC = {
@@ -76,10 +76,10 @@ EVENT_DESC = {
 
 ### Define Weather Colours
 WEATHER_COLOURS = {
-    'Rain': '#332288', # Dark blue
-    'Partially cloudy': '#CC6677', # Light grey
-    'Overcast': '#882255', # Grey
-    'Clear': '#88CCEE' # Orange
+    'Rain': '#AF6BCA', # Dark blue
+    'Partially cloudy': '#882255', # Light grey
+    'Overcast': '#000000', # Grey
+    'Clear': '#389CAB' # Orange
 }
 
 '''
@@ -459,8 +459,9 @@ def draw_racetrack(fig):
             name=f'Lap {lap_number}',
             customdata=position_data_100[i]['Distance'],
             hoverinfo='skip',
+            showlegend=False,
             hovertemplate='Distance: %{customdata:.0f}'
-        ), row=1, col=2)
+        ), row=3, col=2)
         
         # Marker trace with different marker styles
         fig.add_trace(go.Scatter(
@@ -470,12 +471,11 @@ def draw_racetrack(fig):
             marker=dict(
                 symbol=marker_styles[i % len(marker_styles)],  
                 color=color_for_lap,
-                size=6 
+                size=7 
             ),
             name=f'Original Data Lap {lap_number}',
-            customdata=position_data_orig[i]['Distance'],
-            showlegend=False
-        ), row=1, col=2)
+            customdata=position_data_orig[i]['Distance']
+        ), row=3, col=2)
         
     # Create a line trace
     fig.add_trace(go.Scatter(
@@ -485,7 +485,7 @@ def draw_racetrack(fig):
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
         showlegend=False  # Marker style
-    ),  row=1, col=2)
+    ),  row=3, col=2)
         # Create a line trace
     fig.add_trace(go.Scatter(
         x=[240, 290],  # X-coordinates
@@ -495,7 +495,7 @@ def draw_racetrack(fig):
         marker=dict(size=8), 
         showlegend=False  # Marker style
         # Marker style
-    ),  row=1, col=2 )
+    ),  row=3, col=2 )
     # Create a line trace
     fig.add_trace(go.Scatter(
         x=[550, 450],  # X-coordinates
@@ -504,14 +504,14 @@ def draw_racetrack(fig):
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
         showlegend=False # Marker style
-    ),  row = 1, col = 2)
+    ),  row = 3, col = 2)
     # Add an annotation
     fig.add_annotation(
         x=-50,  # X-coordinate
         y=100,  # Y-coordinate
         text="S1",  # Text to display
         showarrow=True,  # Show an arrow pointing to the annotation
-        arrowhead=1, row = 1, col = 2  # Arrowhead style
+        arrowhead=1, row = 3, col = 2  # Arrowhead style
     )
     # Add an annotation
     fig.add_annotation(
@@ -519,7 +519,7 @@ def draw_racetrack(fig):
         y=200,  # Y-coordinate
         text="S2",  # Text to display
         showarrow=True,  # Show an arrow pointing to the annotation
-        arrowhead=1, row = 1, col = 2 # Arrowhead style
+        arrowhead=1, row = 3, col = 2 # Arrowhead style
     )
     # Add an annotation
     fig.add_annotation(
@@ -527,14 +527,14 @@ def draw_racetrack(fig):
         y=-300,  # Y-coordinate
         text="S3",  # Text to display
         showarrow=True,  # Show an arrow pointing to the annotation
-        arrowhead=1, row = 1, col = 2  # Arrowhead style
+        arrowhead=1, row = 3, col = 2  # Arrowhead style
     )
-    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
-    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
+    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 3, col = 2)
+    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 3, col = 2)
 
     ## Update Axes
-    fig.update_xaxes(title_text = "X Coordinate (m)", row = 1, col = 2)
-    fig.update_yaxes(title_text = "Y Coordinate (m)", row = 1, col = 2)
+    fig.update_xaxes(title_text = "X Coordinate (m)", row = 3, col = 2)
+    fig.update_yaxes(title_text = "Y Coordinate (m)", row = 3, col = 2)
 
     return fig
 
@@ -688,7 +688,7 @@ def draw_racelines(fig):
             name=f'Lap {lap_number}',
             hovertemplate=('Rel. Position: %{y:.1f}<br>'  # Display relative position
         )
-        ), row = 3, col = 2)
+        ), row = 1, col = 2)
 
     max_distance = max(distances)  # Get the maximum distance value
 
@@ -700,7 +700,7 @@ def draw_racelines(fig):
         y0=0,
         y1=0,
         line=dict(color="Black", width=3, dash="solid"),  # Changed color, width, and dash
-    ), row = 3, col = 2)
+    ), row = 1, col = 2)
     fig.add_shape(go.layout.Shape(
         type="line",
         x0=0,
@@ -708,7 +708,7 @@ def draw_racelines(fig):
         y0=1,
         y1=1,
         line=dict(color="Black", width=3, dash="solid"),  # Changed color, width, and dash
-    ), row = 3, col = 2)
+    ), row = 1, col = 2)
 
     # Add annotations for boundary labels (modified)
     fig.add_annotation(
@@ -719,7 +719,7 @@ def draw_racelines(fig):
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="top",
-        row = 3, col = 2   # Anchor to the top to position it below the line
+        row = 1, col = 2   # Anchor to the top to position it below the line
     )
     fig.add_annotation(
         x=max_distance * 0.16, # Adjust the position to be inside the plot
@@ -729,11 +729,11 @@ def draw_racelines(fig):
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="bottom",# Anchor to the bottom to position it above the line
-        row = 3, col = 2)
+        row = 1, col = 2)
 
     ## Update Axes
-    fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
-    fig.update_yaxes(title_text = "Relative Position On Racetrack", row = 2, col = 2)
+    fig.update_xaxes(title_text = "Distance (m)", row = 1, col = 2)
+    fig.update_yaxes(title_text = "Relative Position On Racetrack", row = 1, col = 2)
 
     return fig
 
@@ -772,8 +772,6 @@ def draw_events_and_weather(fig):
         ),
         row=2, col=1
     )
-
-   
 
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(showticklabels=False, row=2, col=1)
@@ -822,9 +820,9 @@ def create_visual():
     ## Draw Plot 5
     fig = draw_stackedbar(fig)
 
-    sector1_index = 34  
-    sector2_index = 35  
-    sector3_index = 36  
+    sector1_index = 36 
+    sector2_index = 37  
+    sector3_index = 38   
 
     sector_time_buttons = [
         dict(
@@ -905,7 +903,6 @@ lap_event_colours = [EVENT_COLOURS.get(status, '') for status in lap_events['Tra
 
 ## create the figure itself
 fig = create_visual()   
-
 '''
 Use Dash to make our graphs.
 Initialize our fig and a variable to store the selected points.
