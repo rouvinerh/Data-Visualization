@@ -32,16 +32,15 @@ EVENT_HIERARCHY = {
     6: 3,  # Virtual Safety Car deployed
     7: 3,  # Virtual Safety Car ending
     4: 4,  # Safety Car
-    5: 5   # Red Flag
 }
 
 ### Colours used for each compound type ###
 TIRE_COLOUR = {
-    'soft': '#F23838',        
+    'soft': '#E80101',        
     'medium': '#F2CB05',      
     'hard': '#FFFFFF',        
-    'intermediate': '#5BA004',
-    'wet': '#171695'          
+    'intermediate': '#07BF47',
+    'wet': '#0856FF'          
 }
 
 ### Shapes used for each compound type ###
@@ -55,19 +54,17 @@ TIRE_SHAPE = {
 
 ### Define Event Colours
 EVENT_COLOURS = {
-    1: '#4CAF50', # clear
-    2: '#FFC107', # yellow flag
-    3: '#607D8B', # VSC
-    4: '#a4d5ed', # safety car
-    5: '#FF3B30'   # red flag
+    1: '#FFFFFF', # clear
+    2: '#DDCC77', # yellow flag
+    3: '#44AA99', # VSC
+    4: '#117733', # safety car
 }
 
 EVENT_LEGEND = {
-    'No Events': '#4CAF50', # clear
-    'Yellow Flag': '#FFC107', # yellow flag
-    'Virtual Safety Car': '#607D8B', # VSC
-    'Safety Car': '#a4d5ed', # safety car
-    'Red Flag': '#FF3B30'   # red flag
+    'No Events': '#FFFFFF', # clear
+    'Yellow Flag': '#DDCC77', # yellow flag
+    'Virtual Safety Car': '#44AA99', # VSC
+    'Safety Car': '#117733', # safety car
 }
 
 EVENT_DESC = {
@@ -75,15 +72,14 @@ EVENT_DESC = {
     2: 'Yellow Flag', # yellow flag
     3: 'Virtual Safety  Car', # VSC
     4: 'Safety Car', # safety car
-    5: 'Red Flag'   # red flag
 }
 
 ### Define Weather Colours
 WEATHER_COLOURS = {
-    'Rain': '#1f77b4', # Dark blue
-    'Partially cloudy': '#d3d3d3', # Light grey
-    'Overcast': '#808080', # Grey
-    'Clear': '#ffa500' # Orange
+    'Rain': '#332288', # Dark blue
+    'Partially cloudy': '#CC6677', # Light grey
+    'Overcast': '#882255', # Grey
+    'Clear': '#88CCEE' # Orange
 }
 
 '''
@@ -414,25 +410,6 @@ def draw_scatterplot(fig):
         showlegend = False
     ), row = 1, col = 1)
 
-    # ### Plot 1: Scatterplot Conditions ### 
-    # ## Rain
-    # fig.add_trace(
-    #     go.Scatter(
-    #         x = change_laps,# approximate_weather_change_laps,  
-    #         y = [190] * len(change_laps), # approximate_weather_change_laps),  plot at y level
-    #         mode = 'text',  
-    #         text = change_weather_emojis,
-    #         textposition = 'middle center',
-    #         name = 'Rainfall Change Points',
-    #         showlegend = False,
-    #         hoverinfo='none',
-    #         textfont=dict(
-    #             size=25 
-    #         )
-    #     ),
-    #     row = 1, col= 1
-    # )
-
     ### Update Axes
     fig.update_xaxes(range=[1, 64], title_text = "", row = 1, col = 1) # Removed X-Axis Naming "Lap Number"
     fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
@@ -500,33 +477,58 @@ def draw_racetrack(fig):
             showlegend=False
         ), row=1, col=2)
         
-           # Create a line trace
-        fig = go.Figure(go.Scatter(
-            x=[-165, -75],  # X-coordinates
-            y=[-175,-50],  # Y-coordinates
-            mode='lines+markers',  # Line with markers at points
-            line=dict(color='black', width=2),  # Line style
-            marker=dict(size=8),  # Marker style
-            row=1, col=2
-        ))
-         # Create a line trace
-        fig = go.Figure(go.Scatter(
-            x=[240, 290],  # X-coordinates
-            y=[250,360],  # Y-coordinates
-            mode='lines+markers',  # Line with markers at points
-            line=dict(color='black', width=2),  # Line style
-            marker=dict(size=8),  # Marker style
-            row=1, col=2  # Marker style
-        ))
-         # Create a line trace
-        fig = go.Figure(go.Scatter(
-            x=[550, 450],  # X-coordinates
-            y=[-300,-160],  # Y-coordinates
-            mode='lines+markers',  # Line with markers at points
-            line=dict(color='black', width=2),  # Line style
-            marker=dict(size=8),  # Marker style
-            row=1, col=2  # Marker style
-        ))
+    # Create a line trace
+    fig.add_trace(go.Scatter(
+        x=[-165, -75],  # X-coordinates
+        y=[-175,-50],  # Y-coordinates
+        mode='lines+markers',  # Line with markers at points
+        line=dict(color='black', width=2),  # Line style
+        marker=dict(size=8), 
+        showlegend=False  # Marker style
+    ),  row=1, col=2)
+        # Create a line trace
+    fig.add_trace(go.Scatter(
+        x=[240, 290],  # X-coordinates
+        y=[250,360],  # Y-coordinates
+        mode='lines+markers',  # Line with markers at points
+        line=dict(color='black', width=2),  # Line style
+        marker=dict(size=8), 
+        showlegend=False  # Marker style
+        # Marker style
+    ),  row=1, col=2 )
+    # Create a line trace
+    fig.add_trace(go.Scatter(
+        x=[550, 450],  # X-coordinates
+        y=[-300,-160],  # Y-coordinates
+        mode='lines+markers',  # Line with markers at points
+        line=dict(color='black', width=2),  # Line style
+        marker=dict(size=8), 
+        showlegend=False # Marker style
+    ),  row = 1, col = 2)
+    # Add an annotation
+    fig.add_annotation(
+        x=-50,  # X-coordinate
+        y=100,  # Y-coordinate
+        text="S1",  # Text to display
+        showarrow=True,  # Show an arrow pointing to the annotation
+        arrowhead=1, row = 1, col = 2  # Arrowhead style
+    )
+    # Add an annotation
+    fig.add_annotation(
+        x=330,  # X-coordinate
+        y=200,  # Y-coordinate
+        text="S2",  # Text to display
+        showarrow=True,  # Show an arrow pointing to the annotation
+        arrowhead=1, row = 1, col = 2 # Arrowhead style
+    )
+    # Add an annotation
+    fig.add_annotation(
+        x=250,  # X-coordinate
+        y=-300,  # Y-coordinate
+        text="S3",  # Text to display
+        showarrow=True,  # Show an arrow pointing to the annotation
+        arrowhead=1, row = 1, col = 2  # Arrowhead style
+    )
     fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
     fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
 
@@ -544,18 +546,27 @@ def draw_stackedbar(fig):
     for sector, color in zip(['Sector1Time', 'Sector2Time', 'Sector3Time'], ['blue', 'green', 'orange']):
         sector_data = driver_data[driver_data['Sector'] == sector]
 
+        hovertemplate = (
+            '%{y:.2f} seconds<br>Tire Compound: %{text}'
+            if sector == 'Sector3Time' else
+            '%{y:.2f} seconds'
+        )
+
         fig.add_trace(
             go.Bar(
                 x=sector_data['LapNumber'],
                 y=sector_data['Time'],
                 name=f"{sector}",
-                showlegend = False,
-                marker = dict(
-                    color = lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
+                showlegend=False,
+                marker=dict(
+                    color=lap_time_data['Compound'].map(lambda x: TIRE_COLOUR.get(x.lower(), 'black')),
                     line=dict(color='black', width=1)
                 ),
+                hovertemplate=hovertemplate,
+                text=(lap_time_data['Compound'] if sector == 'Sector3Time' else ""),
+                textposition="none"  
             ),
-            row = 3, col = 1
+            row=3, col=1
         )
 
     ## Update Axes
@@ -893,7 +904,7 @@ lap_events = process_lap_events()
 lap_event_colours = [EVENT_COLOURS.get(status, '') for status in lap_events['TrackStatusHierarchy']]
 
 ## create the figure itself
-fig = create_visual()
+fig = create_visual()   
 
 '''
 Use Dash to make our graphs.
