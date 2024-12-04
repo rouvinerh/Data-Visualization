@@ -481,6 +481,7 @@ def draw_racetrack(fig):
             line=dict(color=color_for_lap),
             name=f'Lap {lap_number}',
             customdata=position_data_100[i]['Distance'],
+            hoverinfo='skip',
             hovertemplate='Distance: %{customdata:.0f}'
         ), row=1, col=2)
         
@@ -492,14 +493,40 @@ def draw_racetrack(fig):
             marker=dict(
                 symbol=marker_styles[i % len(marker_styles)],  
                 color=color_for_lap,
-                size=5 
+                size=6 
             ),
             name=f'Original Data Lap {lap_number}',
             customdata=position_data_orig[i]['Distance'],
-            hoverinfo='skip',
             showlegend=False
         ), row=1, col=2)
-
+        
+           # Create a line trace
+        fig = go.Figure(go.Scatter(
+            x=[-165, -75],  # X-coordinates
+            y=[-175,-50],  # Y-coordinates
+            mode='lines+markers',  # Line with markers at points
+            line=dict(color='black', width=2),  # Line style
+            marker=dict(size=8),  # Marker style
+            row=1, col=2
+        ))
+         # Create a line trace
+        fig = go.Figure(go.Scatter(
+            x=[240, 290],  # X-coordinates
+            y=[250,360],  # Y-coordinates
+            mode='lines+markers',  # Line with markers at points
+            line=dict(color='black', width=2),  # Line style
+            marker=dict(size=8),  # Marker style
+            row=1, col=2  # Marker style
+        ))
+         # Create a line trace
+        fig = go.Figure(go.Scatter(
+            x=[550, 450],  # X-coordinates
+            y=[-300,-160],  # Y-coordinates
+            mode='lines+markers',  # Line with markers at points
+            line=dict(color='black', width=2),  # Line style
+            marker=dict(size=8),  # Marker style
+            row=1, col=2  # Marker style
+        ))
     fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
     fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 1, col = 2)
 
@@ -682,7 +709,7 @@ def draw_racelines(fig):
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="top",
         row = 3, col = 2   # Anchor to the top to position it below the line
-        )
+    )
     fig.add_annotation(
         x=max_distance * 0.16, # Adjust the position to be inside the plot
         y=0.95,  # Position slightly above the line (adjust as needed)
