@@ -19,7 +19,8 @@ GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'VET'
 SELECTED_LAPS = [10,26,37,42,62]
-WEATHER_PATH = 'C:/Users/tillm/OneDrive - rwth-aachen.de/Dokumente/GitHub/Data-Visualization/weather_data.xlsx'
+WEATHER_PATH = "C:\\Users\\rouvi\\OneDrive\\Desktop\\NUS\\Y3S1\\Data Visualisation\\Data-Visualization\\weather_data.xlsx"
+
 
 '''
 Constants that change the event hierarchy or visuals used in the charts.
@@ -413,24 +414,24 @@ def draw_scatterplot(fig):
         showlegend = False
     ), row = 1, col = 1)
 
-    ### Plot 1: Scatterplot Conditions ### 
-    ## Rain
-    fig.add_trace(
-        go.Scatter(
-            x = change_laps,# approximate_weather_change_laps,  
-            y = [190] * len(change_laps), # approximate_weather_change_laps),  plot at y level
-            mode = 'text',  
-            text = change_weather_emojis,
-            textposition = 'middle center',
-            name = 'Rainfall Change Points',
-            showlegend = False,
-            hoverinfo='none',
-            textfont=dict(
-                size=25 
-            )
-        ),
-        row = 1, col= 1
-    )
+    # ### Plot 1: Scatterplot Conditions ### 
+    # ## Rain
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x = change_laps,# approximate_weather_change_laps,  
+    #         y = [190] * len(change_laps), # approximate_weather_change_laps),  plot at y level
+    #         mode = 'text',  
+    #         text = change_weather_emojis,
+    #         textposition = 'middle center',
+    #         name = 'Rainfall Change Points',
+    #         showlegend = False,
+    #         hoverinfo='none',
+    #         textfont=dict(
+    #             size=25 
+    #         )
+    #     ),
+    #     row = 1, col= 1
+    # )
 
     ### Update Axes
     fig.update_xaxes(range=[1, 64], title_text = "", row = 1, col = 1) # Removed X-Axis Naming "Lap Number"
@@ -783,37 +784,37 @@ def create_visual():
     ## Draw Plot 5
     fig = draw_stackedbar(fig)
 
-    sector1_index = 32  
-    sector2_index = 33  
-    sector3_index = 34  
+    sector1_index = 34  
+    sector2_index = 35  
+    sector3_index = 36  
 
     sector_time_buttons = [
         dict(
             label="All Sectors",
             method="update",
             args=[
-                {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < 32 for i in range(len(fig.data))]}
+                {"visible": [i == sector1_index or i == sector2_index or i == sector3_index or i < sector1_index for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 1",
             method="update",
             args=[
-                {"visible": [i == sector1_index or i < 32 for i in range(len(fig.data))]}
+                {"visible": [i == sector1_index or i < sector1_index for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 2",
             method="update",
             args=[
-                {"visible": [i == sector2_index or i < 32 for i in range(len(fig.data))]}
+                {"visible": [i == sector2_index or i < sector1_index for i in range(len(fig.data))]}
             ],
         ),
         dict(
             label="Sector 3",
             method="update",
             args=[
-                {"visible": [i == sector3_index or i < 32 for i in range(len(fig.data))]}
+                {"visible": [i == sector3_index or i < sector1_index for i in range(len(fig.data))]}
             ],
         ),
     ]
@@ -885,7 +886,7 @@ app.layout = html.Div([
         style={
             'position': 'absolute',
             'top': '565px',      # Vertical position from the top
-            'left': '690px',     # Horizontal position from the left
+            'left': '715px',     # Horizontal position from the left
             'font-size': '14px',
             'color': 'grey',
             'font-family': 'Open Sans, sans-serif'
@@ -897,7 +898,7 @@ app.layout = html.Div([
         style={
             'position': 'absolute',
             'top': '600px',      # Vertical position from the top
-            'left': '700px',     # Horizontal position from the left
+            'left': '715px',     # Horizontal position from the left
             'font-size': '14px',
             'color': 'grey',
             'font-family': 'Open Sans, sans-serif'
