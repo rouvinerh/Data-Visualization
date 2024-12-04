@@ -476,7 +476,7 @@ def draw_racetrack(fig):
             name=f'Original Data Lap {lap_number}',
             customdata=position_data_orig[i]['Distance'],
             hovertemplate='Distance: %{customdata:.0f}',
-            hoverinfo='skip'
+            hoverinfo='none'
         ), row=3, col=2)
         
     # Create a line trace
@@ -486,7 +486,8 @@ def draw_racetrack(fig):
         mode='lines+markers',  # Line with markers at points
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
-        showlegend=False  # Marker style
+        showlegend=False,
+        hoverinfo='none'  # Marker style
     ),  row=3, col=2)
         # Create a line trace
     fig.add_trace(go.Scatter(
@@ -495,7 +496,8 @@ def draw_racetrack(fig):
         mode='lines+markers',  # Line with markers at points
         line=dict(color='black', width=2),  # Line style 
         marker=dict(size=8), 
-        showlegend=False  # Marker style
+        showlegend=False,
+        hoverinfo='none'  # Marker style
         # Marker style
     ),  row=3, col=2 )
     # Create a line trace
@@ -505,7 +507,8 @@ def draw_racetrack(fig):
         mode='lines+markers',  # Line with markers at points
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
-        showlegend=False # Marker style
+        showlegend=False,
+        hoverinfo='none' # Marker style
     ),  row = 3, col = 2)
     # Add an annotation
     fig.add_annotation(
@@ -534,8 +537,8 @@ def draw_racetrack(fig):
         font=dict(size=20),  # Show an arrow pointing to the annotation
         arrowhead=1, row = 3, col = 2  # Arrowhead style
     )
-    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 3, col = 2)
-    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='skip'), row = 3, col = 2)
+    fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='none'), row = 3, col = 2)
+    fig.add_trace(go.Scatter(x=x_right - offset_x, y=y_right - offset_y, mode='lines',line=dict(color='black'), name='Left Boundary',showlegend=False, hoverinfo='none'), row = 3, col = 2)
 
     ## Update Axes
     fig.update_xaxes(title_text = "X Coordinate (m)", row = 3, col = 2)
