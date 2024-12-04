@@ -459,8 +459,8 @@ def draw_racetrack(fig):
             name=f'Lap {lap_number}',
             customdata=position_data_100[i]['Distance'],
             hoverinfo='skip',
-            showlegend=False,
-            hovertemplate='Distance: %{customdata:.0f}'
+            showlegend=False
+            
         ), row=3, col=2)
         
         # Marker trace with different marker styles
@@ -474,13 +474,15 @@ def draw_racetrack(fig):
                 size=7 
             ),
             name=f'Original Data Lap {lap_number}',
-            customdata=position_data_orig[i]['Distance']
+            customdata=position_data_orig[i]['Distance'],
+            hovertemplate='Distance: %{customdata:.0f}',
+            hoverinfo='skip'
         ), row=3, col=2)
         
     # Create a line trace
     fig.add_trace(go.Scatter(
-        x=[-165, -75],  # X-coordinates
-        y=[-175,-50],  # Y-coordinates
+        x=[-165, -50],  # X-coordinates
+        y=[-175,-100],  # Y-coordinates
         mode='lines+markers',  # Line with markers at points
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
@@ -488,18 +490,18 @@ def draw_racetrack(fig):
     ),  row=3, col=2)
         # Create a line trace
     fig.add_trace(go.Scatter(
-        x=[240, 290],  # X-coordinates
-        y=[250,360],  # Y-coordinates
+        x=[240, 300],  # X-coordinates
+        y=[250,380],  # Y-coordinates
         mode='lines+markers',  # Line with markers at points
-        line=dict(color='black', width=2),  # Line style
+        line=dict(color='black', width=2),  # Line style 
         marker=dict(size=8), 
         showlegend=False  # Marker style
         # Marker style
     ),  row=3, col=2 )
     # Create a line trace
     fig.add_trace(go.Scatter(
-        x=[550, 450],  # X-coordinates
-        y=[-300,-160],  # Y-coordinates
+        x=[480, 410],  # X-coordinates
+        y=[-300,-170],  # Y-coordinates
         mode='lines+markers',  # Line with markers at points
         line=dict(color='black', width=2),  # Line style
         marker=dict(size=8), 
@@ -508,25 +510,28 @@ def draw_racetrack(fig):
     # Add an annotation
     fig.add_annotation(
         x=-50,  # X-coordinate
-        y=100,  # Y-coordinate
+        y=350,  # Y-coordinate
         text="S1",  # Text to display
-        showarrow=True,  # Show an arrow pointing to the annotation
+        showarrow=False,
+        font=dict(size=20),  # Show an arrow pointing to the annotation
         arrowhead=1, row = 3, col = 2  # Arrowhead style
     )
     # Add an annotation
     fig.add_annotation(
-        x=330,  # X-coordinate
-        y=200,  # Y-coordinate
+        x=600,  # X-coordinate
+        y=300,  # Y-coordinate
         text="S2",  # Text to display
-        showarrow=True,  # Show an arrow pointing to the annotation
+        showarrow=False,
+        font=dict(size=20),  # Show an arrow pointing to the annotation
         arrowhead=1, row = 3, col = 2 # Arrowhead style
     )
     # Add an annotation
     fig.add_annotation(
         x=250,  # X-coordinate
-        y=-300,  # Y-coordinate
+        y=-400,  # Y-coordinate
         text="S3",  # Text to display
-        showarrow=True,  # Show an arrow pointing to the annotation
+        showarrow=False,
+        font=dict(size=20),  # Show an arrow pointing to the annotation
         arrowhead=1, row = 3, col = 2  # Arrowhead style
     )
     fig.add_trace(go.Scatter(x=x_left - offset_x, y=y_left - offset_y, mode='lines', line=dict(color='black'),name='Right Boundary',showlegend=False, hoverinfo='skip'), row = 3, col = 2)
@@ -855,7 +860,6 @@ def create_visual():
         ),
     ]
 
-
     ## Update Layout
     fig.update_layout(
         plot_bgcolor='white',
@@ -903,6 +907,7 @@ lap_event_colours = [EVENT_COLOURS.get(status, '') for status in lap_events['Tra
 
 ## create the figure itself
 fig = create_visual()   
+# print(fig.data)
 '''
 Use Dash to make our graphs.
 Initialize our fig and a variable to store the selected points.
