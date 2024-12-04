@@ -17,8 +17,9 @@ Change this if you'd like to see a different course, driver or lap.
 YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
-DRIVER = 'VER'
-SELECTED_LAPS = [4,33,38, 55]
+DRIVER = 'VET'
+SELECTED_LAPS = [10,26,37,42,62]
+WEATHER_PATH = 'C:/Users/tillm/OneDrive - rwth-aachen.de/Dokumente/GitHub/Data-Visualization/weather_data.xlsx'
 
 '''
 Constants that change the event hierarchy or visuals used in the charts.
@@ -99,7 +100,7 @@ x_coords_original = []
 y_coords_original = []
 
 # new weather data
-rawdata = pd.read_excel('c:/Users/rouvi/OneDrive/Desktop/NUS/Y3S1/Data Visualisation/Data-Visualization/weather_data.xlsx')
+rawdata = pd.read_excel(WEATHER_PATH)
 # rawdata = pd.read_excel('weather_data.xlsx')  # Adjust the path if necessary
 weather_data = rawdata[['Date time', 'Conditions']]
 
@@ -432,7 +433,7 @@ def draw_scatterplot(fig):
     )
 
     ### Update Axes
-    fig.update_xaxes(range=[1, 64], title_text = "Lap Number", row = 1, col = 1)
+    fig.update_xaxes(range=[1, 64], title_text = "", row = 1, col = 1) # Removed X-Axis Naming "Lap Number"
     fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
 
     return fig
@@ -619,8 +620,8 @@ def draw_racelines(fig):
             distance_to_outer = point.distance(intersection_outer)
 
             # Calculate relative position
-            total_width = distance_to_inner + distance_to_outer
-            relative_position = distance_to_outer / total_width
+            total_width =  distance_to_inner + distance_to_outer
+            relative_position = distance_to_inner / total_width
             relative_positions.append(relative_position)
             previous_relative_position = relative_position
 
@@ -648,7 +649,7 @@ def draw_racelines(fig):
             name=f'Lap {lap_number}',
             hovertemplate=('Rel. Position: %{y:.1f}<br>'  # Display relative position
         )
-        ), row = 2, col = 2)
+        ), row = 3, col = 2)
 
     max_distance = max(distances)  # Get the maximum distance value
 
@@ -660,7 +661,7 @@ def draw_racelines(fig):
         y0=0,
         y1=0,
         line=dict(color="Black", width=3, dash="solid"),  # Changed color, width, and dash
-    ), row = 2, col = 2)
+    ), row = 3, col = 2)
     fig.add_shape(go.layout.Shape(
         type="line",
         x0=0,
@@ -668,7 +669,7 @@ def draw_racelines(fig):
         y0=1,
         y1=1,
         line=dict(color="Black", width=3, dash="solid"),  # Changed color, width, and dash
-    ), row = 2, col = 2)
+    ), row = 3, col = 2)
 
     # Add annotations for boundary labels (modified)
     fig.add_annotation(
@@ -679,7 +680,7 @@ def draw_racelines(fig):
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="top",
-        row = 2, col = 2   # Anchor to the top to position it below the line
+        row = 3, col = 2   # Anchor to the top to position it below the line
         )
     fig.add_annotation(
         x=max_distance * 0.16, # Adjust the position to be inside the plot
@@ -689,7 +690,7 @@ def draw_racelines(fig):
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="bottom",# Anchor to the bottom to position it above the line
-        row = 2, col = 2)
+        row = 3, col = 2)
 
     ## Update Axes
     fig.update_xaxes(title_text = "Distance (m)", row = 2, col = 2)
@@ -733,6 +734,8 @@ def draw_events_and_weather(fig):
         row=2, col=1
     )
 
+   
+
     fig.update_xaxes(title_text = "Lap Number", row = 2, col = 1)
     fig.update_yaxes(showticklabels=False, row=2, col=1)
 
@@ -746,12 +749,14 @@ def create_visual():
     fig = make_subplots(
         rows = 3, cols = 2,
         subplot_titles=[
-            "Lap Times with Weather", 
+            "Lap Times with Race Events & Weather", 
             "Track Map", 
-            "Lap Events and Weather", 
-            "Relative Position Between Boundaries",
+            " ", 
+            "",
             "Sector Times",
+            "Relative Position Between Boundaries",
         ],
+        row_heights=[0.45, 0.1, 0.45],  # Adjust row heights; the second row is smaller
         vertical_spacing = 0.1,
         specs=[
             [{'secondary_y': True}, {'secondary_y': True}],
@@ -832,7 +837,7 @@ def create_visual():
                 yanchor="top",
             )
         ],
-        hovermode="x unified",
+        hovermode='x unified',#"closest",I Had troubles with that in the map graph
         height=1000,
         legend=dict(
             x=1,
@@ -872,7 +877,32 @@ app.layout = html.Div([
     dcc.Graph(id='interactive-plot', figure=fig),
     dcc.Store(id='selected-points', data=[]),
     dcc.Store(id='current-points', data=[]),
-    dcc.Store(id='prev-points', data=[])     
+    dcc.Store(id='prev-points', data=[]),
+
+    # Small text positioned based on coordinates
+    html.Div(
+        "Race Events",
+        style={
+            'position': 'absolute',
+            'top': '565px',      # Vertical position from the top
+            'left': '690px',     # Horizontal position from the left
+            'font-size': '14px',
+            'color': 'grey',
+            'font-family': 'Open Sans, sans-serif'
+        }
+    ),
+    # Small text positioned based on coordinates
+    html.Div(
+        "Weather",
+        style={
+            'position': 'absolute',
+            'top': '600px',      # Vertical position from the top
+            'left': '700px',     # Horizontal position from the left
+            'font-size': '14px',
+            'color': 'grey',
+            'font-family': 'Open Sans, sans-serif'
+        }
+    )
 ])
 
 '''
