@@ -19,7 +19,7 @@ GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'VET'
 WEATHER_PATH = "C:\\Users\\rouvi\\OneDrive\\Desktop\\NUS\\Y3S1\\Data Visualisation\\Data-Visualization\\weather_data.xlsx"
-SELECTED_LAPS = [10,26]#[10,26,32,34,37,42,62]
+SELECTED_LAPS = [2,10,26,35]#[10,26,32,34,37,42,62]
 
 
 '''
@@ -737,6 +737,49 @@ def draw_racelines(fig):
         font=dict(size=12),
         xanchor="right",  # Anchor to the right to avoid overlapping with the line
         yanchor="bottom",# Anchor to the bottom to position it above the line
+        row = 1, col = 2)
+    
+    # Add a vertical line at x=3 with 50% opacity and black color
+    fig.add_shape(
+        type="line",               # Shape type
+        x0=3300, x1=3300,                # Start and end x-coordinates
+        y0=0, y1=1,           # Start and end y-coordinates
+        line=dict(color="rgba(0, 0, 0, 0.5)", width=2, dash="dash"),# Anchor to the bottom to position it above the line
+        row = 1, col = 2
+    )
+
+    # Add a vertical line at x=3 with 50% opacity and black color
+    fig.add_shape(
+        type="line",               # Shape type
+        x0=1100, x1=1100,                # Start and end x-coordinates
+        y0=0, y1=1,           # Start and end y-coordinates
+        line=dict(color="rgba(0, 0, 0, 0.5)", width=2, dash="dash"),# Anchor to the bottom to position it above the line
+        row = 1, col = 2
+    )
+
+    fig.add_annotation(
+        x=500,
+        y=1.05,  # Position slightly above the line (adjust as needed)
+        text="S1",
+        showarrow=False,
+        font=dict(color="rgba(0, 0, 0, 0.5)",size=12),
+        row = 1, col = 2
+        )
+    
+    fig.add_annotation(
+        x=2250,
+        y=1.05,  # Position slightly above the line (adjust as needed)
+        text="S2",
+        showarrow=False,
+        font=dict(color="rgba(0, 0, 0, 0.5)",size=12),
+        row = 1, col = 2)
+    
+    fig.add_annotation(
+        x=4000,
+        y=1.05,  # Position slightly above the line (adjust as needed)
+        text="S3",
+        showarrow=False,
+        font=dict(color="rgba(0, 0, 0, 0.5)",size=12),
         row = 1, col = 2)
 
     ## Update Axes
