@@ -18,8 +18,8 @@ YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'VET'
-WEATHER_PATH = "C:\\Users\\rouvi\\OneDrive\\Desktop\\NUS\\Y3S1\\Data Visualisation\\Data-Visualization\\weather_data.xlsx"
-SELECTED_LAPS = [2,10,26,35]#[10,26,32,34,37,42,62]
+WEATHER_PATH = "weather_data.xlsx"
+SELECTED_LAPS = [10,26,35,62]#[10,26,32,34,37,42,62]
 
 
 '''
@@ -459,7 +459,7 @@ def draw_racetrack(fig):
             name=f'Lap {lap_number}',
             customdata=position_data_100[i]['Distance'],
             hoverinfo='skip',
-            showlegend=False
+            showlegend=True
             
         ), row=3, col=2)
         
@@ -829,6 +829,23 @@ def draw_events_and_weather(fig):
 
     return fig
 
+
+# Define update function to toggle visibility
+def update_visibility(sector_index=None):
+    global visibility_state  # Use the global visibility state
+    
+    # If a sector index is provided, toggle its visibility
+    if sector_index is not None:
+        for i in range(len(fig.data)):
+            if i == sector_index:
+                visibility_state[i] = not visibility_state[i]  # Toggle visibility
+    else:
+        # Show all sectors if no specific index is provided
+        for i in range(len(fig.data)):
+            visibility_state[i] = i < sector1_index or i in [sector1_index, sector2_index, sector3_index]
+    
+    return [{"visible": visibility_state}]
+
 '''
 **Slaps top** This bad boy creates our whole visual.
 '''
@@ -838,11 +855,11 @@ def create_visual():
         rows = 3, cols = 2,
         subplot_titles=[
             "Lap Times with Race Events & Weather", 
-            "Track Map", 
+            "Relative Position Between Boundaries", 
             " ", 
             "",
             "Sector Times",
-            "Relative Position Between Boundaries",
+            "Track Map",
         ],
         row_heights=[0.45, 0.1, 0.45],  # Adjust row heights; the second row is smaller
         vertical_spacing = 0.1,
@@ -852,7 +869,7 @@ def create_visual():
             [{'secondary_y': True}, {'secondary_y': True}]
         ]
     )
-
+    print(fig)
     ## Draw Legend
     fig = draw_legend(fig)
 
@@ -871,9 +888,9 @@ def create_visual():
     ## Draw Plot 5
     fig = draw_stackedbar(fig)
 
-    sector1_index = 27 
-    sector2_index = 28  
-    sector3_index = 29   
+    sector1_index = 33 
+    sector2_index = 34 
+    sector3_index = 35  
 
     sector_time_buttons = [
         dict(
