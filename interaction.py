@@ -18,8 +18,8 @@ YEAR = 2019
 GRAND_PRIX = 'German Grand Prix'
 SESSION_TYPE = 'R' 
 DRIVER = 'VET'
-SELECTED_LAPS = [10,26,37,42,62]
 WEATHER_PATH = "C:\\Users\\rouvi\\OneDrive\\Desktop\\NUS\\Y3S1\\Data Visualisation\\Data-Visualization\\weather_data.xlsx"
+SELECTED_LAPS = [10,26]#[10,26,32,34,37,42,62]
 
 
 '''
@@ -411,8 +411,8 @@ def draw_scatterplot(fig):
     ), row = 1, col = 1)
 
     ### Update Axes
-    fig.update_xaxes(range=[1, 64], title_text = "", row = 1, col = 1) # Removed X-Axis Naming "Lap Number"
-    fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, sector_times_df['LapTime'].max() * 1.2], row = 1, col = 1)
+    fig.update_xaxes(range=[0, 65], title_text = "", row = 1, col = 1) # Removed X-Axis Naming "Lap Number"
+    fig.update_yaxes(title_text = "Lap Times (s)", range = [sector_times_df['LapTime'].min() * 0.8, 140], row = 1, col = 1)
 
     return fig
 
@@ -720,8 +720,8 @@ def draw_racelines(fig):
 
     # Add annotations for boundary labels (modified)
     fig.add_annotation(
-        x=max_distance * 0.16, # Adjust the position to be inside the plot
-        y=0.05,  # Position slightly below the line (adjust as needed)
+        x=max_distance * 0.165, # Adjust the position to be inside the plot
+        y=0.07,  # Position slightly below the line (adjust as needed)
         text="Outer Boundary",
         showarrow=False,
         font=dict(size=12),
@@ -730,8 +730,8 @@ def draw_racelines(fig):
         row = 1, col = 2   # Anchor to the top to position it below the line
     )
     fig.add_annotation(
-        x=max_distance * 0.16, # Adjust the position to be inside the plot
-        y=0.95,  # Position slightly above the line (adjust as needed)
+        x=max_distance * 0.165, # Adjust the position to be inside the plot
+        y=0.93,  # Position slightly above the line (adjust as needed)
         text="Inner Boundary",
         showarrow=False,
         font=dict(size=12),
@@ -918,6 +918,8 @@ Initialize our fig and a variable to store the selected points.
 app = Dash(__name__)
 app.layout = html.Div([
     html.H1("Visualizing F1: Tire Strategies and Racing Lines", style={'text-align': 'center'}),
+    html.H3("Sebastian Vettel German Grand Prix 2019", style={'text-align': 'center', 'color': 'gray'}),
+
     dcc.Graph(id='interactive-plot', figure=fig),
     dcc.Store(id='selected-points', data=[]),
     dcc.Store(id='current-points', data=[]),
@@ -928,8 +930,8 @@ app.layout = html.Div([
         "Race Events",
         style={
             'position': 'absolute',
-            'top': '565px',      # Vertical position from the top
-            'left': '715px',     # Horizontal position from the left
+            'top': '610px',      # Vertical position from the top
+            'left': '750px',     # Horizontal position from the left
             'font-size': '14px',
             'color': 'grey',
             'font-family': 'Open Sans, sans-serif'
@@ -940,8 +942,8 @@ app.layout = html.Div([
         "Weather",
         style={
             'position': 'absolute',
-            'top': '600px',      # Vertical position from the top
-            'left': '715px',     # Horizontal position from the left
+            'top': '645px',      # Vertical position from the top
+            'left': '750px',     # Horizontal position from the left
             'font-size': '14px',
             'color': 'grey',
             'font-family': 'Open Sans, sans-serif'
