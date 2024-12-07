@@ -871,9 +871,9 @@ def create_visual():
     ## Draw Plot 5
     fig = draw_stackedbar(fig)
 
-    sector1_index = 36 
-    sector2_index = 37  
-    sector3_index = 38   
+    sector1_index = 27 
+    sector2_index = 28  
+    sector3_index = 29   
 
     sector_time_buttons = [
         dict(
@@ -953,7 +953,6 @@ lap_event_colours = [EVENT_COLOURS.get(status, '') for status in lap_events['Tra
 
 ## create the figure itself
 fig = create_visual()   
-# print(fig.data)
 '''
 Use Dash to make our graphs.
 Initialize our fig and a variable to store the selected points.
